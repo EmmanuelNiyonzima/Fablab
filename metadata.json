@@ -1,0 +1,6 @@
+{
+  "name": "FabLab Rwanda Financial Management System",
+  "description": "Comprehensive financial management, shared-space expense allocation, budget vs actuals, double-entry accounting ledgers, and reporting system for FabLab Rwanda.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
