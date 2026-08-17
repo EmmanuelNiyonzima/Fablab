@@ -102,6 +102,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleQuickFill = (presetEmail: string) => {
     setEmail(presetEmail);
+    setPassword('admin123');
     setValidationErrors({});
     setErrorMessage('');
   };
