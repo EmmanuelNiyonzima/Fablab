@@ -60,41 +60,53 @@ export class ExportService {
   }
 
   /**
-   * Helper to draw the authentic FabLab Rwanda logo vector directly into the jsPDF canvas
+   * Helper to draw the authentic FabLab Rwanda logo vector with high visibility and size into the jsPDF canvas
    */
-  private static drawFabLabLogo(doc: jsPDF, x: number, y: number, radius: number = 8) {
+  private static drawFabLabLogo(doc: jsPDF, x: number, y: number, radius: number = 13) {
+    // Outer white rim for ultra-high contrast on dark header backgrounds
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x, y, radius + 1.2, 'F');
+
     // Background disc
     doc.setFillColor(11, 25, 44); // Dark Navy #0B192C
     doc.circle(x, y, radius, 'F');
 
-    // Connector technical lines
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.6);
-    doc.line(x - radius * 0.4, y - radius * 0.35, x + radius * 0.4, y - radius * 0.35);
-    doc.line(x - radius * 0.4, y - radius * 0.35, x, y + radius * 0.45);
-    doc.line(x + radius * 0.4, y - radius * 0.35, x, y + radius * 0.45);
+    // High-visibility connector technical circuit lines
+    doc.setDrawColor(226, 232, 240); // Slate-200
+    doc.setLineWidth(1.1);
+    doc.line(x - radius * 0.44, y - radius * 0.35, x + radius * 0.44, y - radius * 0.35);
+    doc.line(x - radius * 0.44, y - radius * 0.35, x, y + radius * 0.48);
+    doc.line(x + radius * 0.44, y - radius * 0.35, x, y + radius * 0.48);
 
-    // Center hub
+    // Inner central hub with outer rim
+    doc.setFillColor(11, 25, 44);
+    doc.circle(x, y - radius * 0.02, radius * 0.22, 'F');
     doc.setFillColor(255, 255, 255);
-    doc.circle(x, y - radius * 0.05, radius * 0.16, 'F');
+    doc.circle(x, y - radius * 0.02, radius * 0.16, 'F');
 
     // Top-Left Node (FabLab Red #E31B23)
-    doc.setFillColor(227, 27, 35);
-    doc.circle(x - radius * 0.42, y - radius * 0.35, radius * 0.3, 'F');
     doc.setFillColor(255, 255, 255);
-    doc.circle(x - radius * 0.42, y - radius * 0.35, radius * 0.1, 'F');
+    doc.circle(x - radius * 0.44, y - radius * 0.35, radius * 0.34, 'F');
+    doc.setFillColor(227, 27, 35);
+    doc.circle(x - radius * 0.44, y - radius * 0.35, radius * 0.28, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x - radius * 0.44, y - radius * 0.35, radius * 0.1, 'F');
 
     // Top-Right Node (FabLab Green #009A44)
-    doc.setFillColor(0, 154, 68);
-    doc.circle(x + radius * 0.42, y - radius * 0.35, radius * 0.3, 'F');
     doc.setFillColor(255, 255, 255);
-    doc.circle(x + radius * 0.42, y - radius * 0.35, radius * 0.1, 'F');
+    doc.circle(x + radius * 0.44, y - radius * 0.35, radius * 0.34, 'F');
+    doc.setFillColor(0, 154, 68);
+    doc.circle(x + radius * 0.44, y - radius * 0.35, radius * 0.28, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x + radius * 0.44, y - radius * 0.35, radius * 0.1, 'F');
 
     // Bottom Node (FabLab Blue #0F4C81)
-    doc.setFillColor(15, 76, 129);
-    doc.circle(x, y + radius * 0.45, radius * 0.3, 'F');
     doc.setFillColor(255, 255, 255);
-    doc.circle(x, y + radius * 0.45, radius * 0.1, 'F');
+    doc.circle(x, y + radius * 0.48, radius * 0.34, 'F');
+    doc.setFillColor(15, 76, 129);
+    doc.circle(x, y + radius * 0.48, radius * 0.28, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x, y + radius * 0.48, radius * 0.1, 'F');
   }
 
   /**
@@ -121,55 +133,58 @@ export class ExportService {
 
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Top Header Banner
+    // Top Header Banner (Spacious 38mm height to accommodate big prominent logo)
     doc.setFillColor(11, 25, 44); // Deep Navy (#0B192C)
-    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.rect(0, 0, pageWidth, 38, 'F');
 
     // Accent line (FabLab Tri-color strip)
     doc.setFillColor(227, 27, 35); // Red
-    doc.rect(0, 30, pageWidth * 0.33, 2, 'F');
+    doc.rect(0, 38, pageWidth * 0.33, 2.5, 'F');
     doc.setFillColor(0, 154, 68); // Green
-    doc.rect(pageWidth * 0.33, 30, pageWidth * 0.34, 2, 'F');
+    doc.rect(pageWidth * 0.33, 38, pageWidth * 0.34, 2.5, 'F');
     doc.setFillColor(15, 76, 129); // Blue
-    doc.rect(pageWidth * 0.67, 30, pageWidth * 0.33, 2, 'F');
+    doc.rect(pageWidth * 0.67, 38, pageWidth * 0.33, 2.5, 'F');
 
-    // Render FabLab Official Tri-Color Vector Logo in Header
-    this.drawFabLabLogo(doc, 22, 15, 9);
+    // Render Large, High-Visibility FabLab Official Tri-Color Vector Logo in Header (radius 13mm = 26mm diameter)
+    this.drawFabLabLogo(doc, 22, 19, 13);
 
     // Organization Brand Typography
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('FABLAB RWANDA', 36, 13);
+    doc.text('FABLAB RWANDA', 42, 15);
 
     // Mini FMS badge
     doc.setFillColor(15, 76, 129);
-    doc.roundedRect(88, 7.5, 12, 6, 1, 1, 'F');
-    doc.setFontSize(7.5);
+    doc.roundedRect(102, 9, 14, 7, 1.5, 1.5, 'F');
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('FMS', 91, 11.5);
+    doc.text('FMS', 105.5, 14);
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(203, 213, 225);
-    doc.text('Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali', 36, 19);
-    doc.text('Official Financial & Cost-Sharing Governance Report | Currency: RWF', 36, 24);
+    doc.setTextColor(226, 232, 240);
+    doc.text('Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali', 42, 22);
+    doc.text('Official Financial & Multi-Entity Cost Sharing Governance Report', 42, 28);
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Currency: RWF (Rwandan Francs) | Compliant with Rwanda Accounting Standards', 42, 33);
 
     // Title Section
     doc.setTextColor(15, 23, 42);
-    doc.setFontSize(13);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, 14, 40);
+    doc.text(title, 14, 48);
 
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
     const dateStr = `Generated: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
     const authorStr = options?.generatedBy ? ` | Prepared by: ${options.generatedBy}` : '';
-    doc.text(`${dateStr}${authorStr}`, 14, 46);
+    doc.text(`${dateStr}${authorStr}`, 14, 54);
 
-    let startY = 50;
+    let startY = 58;
 
     // Summary Stat Badges if provided
     if (options?.summaryStats && options.summaryStats.length > 0) {
