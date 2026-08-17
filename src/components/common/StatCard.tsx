@@ -1,7 +1,7 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-interface StatCardProps {
+export interface StatCardProps {
   id?: string;
   title: string;
   value: string;
@@ -12,7 +12,7 @@ interface StatCardProps {
     isPositive: boolean;
     label?: string;
   };
-  color?: 'emerald' | 'blue' | 'amber' | 'indigo' | 'rose' | 'slate';
+  color?: 'green' | 'blue' | 'red' | 'amber' | 'slate' | 'emerald';
   onClick?: () => void;
 }
 
@@ -23,52 +23,68 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   icon: Icon,
   trend,
-  color = 'slate',
+  color = 'blue',
   onClick,
 }) => {
-  const colorMap = {
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/20',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200 ring-blue-500/20',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/20',
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-indigo-500/20',
-    rose: 'bg-rose-50 text-rose-700 border-rose-200 ring-rose-500/20',
-    slate: 'bg-slate-50 text-slate-700 border-slate-200 ring-slate-500/20',
+  // Normalize color aliases
+  const activeColor = color === 'emerald' ? 'green' : color;
+
+  const iconBgMap: Record<string, string> = {
+    // FabLab Green (Profit, Revenue, Cash Balance, Positive)
+    green: 'bg-[#009A44] text-white ring-4 ring-[#009A44]/15',
+    // FabLab Blue (Structural, Receivables, Allocation, Neutral)
+    blue: 'bg-[#0F4C81] text-white ring-4 ring-[#0F4C81]/15',
+    // FabLab Red (Expenses, Payables, Overdue, Critical)
+    red: 'bg-[#E31B23] text-white ring-4 ring-[#E31B23]/15',
+    // Warning Amber
+    amber: 'bg-amber-600 text-white ring-4 ring-amber-500/15',
+    // Neutral Slate
+    slate: 'bg-slate-800 text-white ring-4 ring-slate-800/15',
   };
 
-  const iconBgMap = {
-    emerald: 'bg-emerald-600 text-white',
-    blue: 'bg-blue-600 text-white',
-    amber: 'bg-amber-600 text-white',
-    indigo: 'bg-indigo-600 text-white',
-    rose: 'bg-rose-600 text-white',
-    slate: 'bg-slate-800 text-white',
+  const topBorderMap: Record<string, string> = {
+    green: 'border-t-2 border-t-[#009A44]',
+    blue: 'border-t-2 border-t-[#0F4C81]',
+    red: 'border-t-2 border-t-[#E31B23]',
+    amber: 'border-t-2 border-t-amber-500',
+    slate: 'border-t-2 border-t-slate-700',
   };
 
   return (
     <div
       id={id}
       onClick={onClick}
-      className={`bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-slate-300 ${
-        onClick ? 'cursor-pointer' : ''
-      }`}
+      className={`bg-white border border-slate-200 rounded-xl p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-slate-300 ${
+        topBorderMap[activeColor] || ''
+      } ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate">
+            {title}
+          </p>
+          <p className="text-2xl font-black text-slate-900 tracking-tight font-numeric truncate">
+            {value}
+          </p>
         </div>
-        <div className={`p-2.5 rounded-lg shadow-xs ${iconBgMap[color]}`}>
+        <div className={`p-2.5 rounded-xl shadow-xs shrink-0 ${iconBgMap[activeColor] || iconBgMap.blue}`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
 
       {(subtitle || trend) && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-          {subtitle && <span className="text-slate-500 font-medium truncate max-w-[200px]">{subtitle}</span>}
+        <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs gap-2">
+          {subtitle && (
+            <span className="text-slate-500 font-medium truncate" title={subtitle}>
+              {subtitle}
+            </span>
+          )}
           {trend && (
             <span
-              className={`inline-flex items-center font-semibold px-2 py-0.5 rounded-full ${
-                trend.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+              className={`inline-flex items-center font-bold px-2 py-0.5 rounded-md text-[11px] shrink-0 font-numeric ${
+                trend.isPositive
+                  ? 'bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF]'
+                  : 'bg-[#FDF1F1] text-[#C2141B] border border-[#F9BFC1]'
               }`}
             >
               {trend.isPositive ? '↑' : '↓'} {trend.value}
