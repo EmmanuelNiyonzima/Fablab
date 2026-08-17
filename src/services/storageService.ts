@@ -133,6 +133,10 @@ class StorageService {
     return this.state;
   }
 
+  public getCurrentUser(): User {
+    return this.state.currentUser;
+  }
+
   public setCurrentUser(user: User) {
     this.state.currentUser = user;
     this.logAudit('USER_LOGIN_SWITCH', 'Auth', user.id, undefined, `Switched active session to ${user.name} (${user.role})`);
@@ -192,6 +196,44 @@ class StorageService {
       this.logAudit('UPDATE_ORGANIZATION', 'Organizations', id, JSON.stringify(old), JSON.stringify(updates));
       this.persist();
     }
+  }
+
+  public deleteOrganization(id: string): { success: boolean; error?: string } {
+    const user = this.getCurrentUser();
+    if (user.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: 'Permission Denied: Only System Administrators have permission to delete registered resident organizations.',
+      };
+    }
+
+    const orgIndex = this.state.organizations.findIndex((o) => o.id === id);
+    if (orgIndex === -1) {
+      return { success: false, error: 'Organization not found.' };
+    }
+
+    const org = this.state.organizations[orgIndex];
+
+    // Check if organization has active contributions or shared expense allocations
+    const hasTransactions = this.state.contributions.some((c) => c.orgId === id);
+    if (hasTransactions) {
+      return {
+        success: false,
+        error: `Cannot delete "${org.name}" because financial contribution records exist for this entity. Please mark the organization as Inactive instead to preserve accounting audit history.`,
+      };
+    }
+
+    this.state.organizations.splice(orgIndex, 1);
+    this.logAudit(
+      'DELETE_ORGANIZATION',
+      'Organizations',
+      id,
+      JSON.stringify(org),
+      undefined,
+      `Administrator ${user.name} permanently deleted organization ${org.name} (${org.code})`
+    );
+    this.persist();
+    return { success: true };
   }
 
   // --- ACCOUNTS ---

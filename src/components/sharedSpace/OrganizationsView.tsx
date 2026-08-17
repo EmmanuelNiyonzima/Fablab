@@ -7,9 +7,12 @@ import {
   Mail, 
   Phone, 
   Edit3, 
+  Trash2,
+  AlertTriangle,
   Wallet,
   CheckCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ShieldAlert
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -23,6 +26,8 @@ export const OrganizationsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+  const [deletingOrg, setDeletingOrg] = useState<Organization | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -36,6 +41,8 @@ export const OrganizationsView: React.FC = () => {
   const [formNotes, setFormNotes] = useState('');
 
   const state = storageService.getState();
+  const currentUser = storageService.getCurrentUser();
+  const isAdmin = currentUser?.role === 'ADMIN';
   const organizations = state.organizations;
 
   const filteredOrgs = organizations.filter(
@@ -74,6 +81,42 @@ export const OrganizationsView: React.FC = () => {
     setFormStatus(org.status);
     setFormNotes(org.notes || '');
     setShowAddModal(true);
+  };
+
+  const handleOpenDelete = (org: Organization) => {
+    if (!isAdmin) {
+      alert('Permission Denied: Only Administrators are authorized to delete resident organizations.');
+      return;
+    }
+    setDeletingOrg(org);
+    setDeleteErrorMessage(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingOrg) return;
+
+    // Call storage deletion
+    const result = storageService.deleteOrganization(deletingOrg.id);
+    if (!result.success) {
+      setDeleteErrorMessage(result.error || 'Failed to delete organization.');
+      return;
+    }
+
+    // Call server endpoint in background if online
+    try {
+      const token = sessionStorage.getItem('fablab_auth_session_token') || localStorage.getItem('fablab_auth_session_token');
+      if (token) {
+        await fetch(`/api/v1/organizations/${deletingOrg.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch {
+      // Background sync fallback
+    }
+
+    setDeletingOrg(null);
+    setDeleteErrorMessage(null);
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -156,6 +199,21 @@ export const OrganizationsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Role-Based Privilege Notice */}
+      {!isAdmin && (
+        <div className="bg-[#EBF3FA] border border-[#0F4C81]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-[#0F4C81]">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-[#0F4C81] shrink-0" />
+            <span>
+              <strong>Access Policy:</strong> All team members can register or update resident organizations. <strong>Deletion</strong> is strictly restricted to System Administrators for audit compliance.
+            </span>
+          </div>
+          <span className="font-semibold text-[11px] bg-white/80 px-2 py-0.5 rounded text-slate-700 border border-slate-200">
+            Current Role: {currentUser?.role || 'Staff'}
+          </span>
+        </div>
+      )}
+
       {/* Search & Actions */}
       <SearchFilterBar
         searchQuery={searchQuery}
@@ -174,8 +232,6 @@ export const OrganizationsView: React.FC = () => {
             const alloc = exp.allocations.find((a) => a.orgId === org.id);
             return sum + (alloc?.monthlyShare || 0);
           }, 0);
-
-          const annualObligation = monthlyObligation * 12;
 
           return (
             <div
@@ -200,13 +256,35 @@ export const OrganizationsView: React.FC = () => {
 
                 <div className="flex items-center gap-1.5">
                   <StatusBadge status={org.status} />
+                  
+                  {/* Edit action available to all authorized users */}
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(org)}
-                    className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Edit Organization Details"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
+
+                  {/* Delete button: Only visible & actionable for Administrator role */}
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDelete(org)}
+                      title="Delete Organization (Admin Privilege)"
+                      className="p-1.5 text-slate-400 hover:text-[#E31B23] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <span 
+                      title="Organization deletion requires Administrator role" 
+                      className="p-1.5 text-slate-300 cursor-not-allowed"
+                    >
+                      <Trash2 className="w-4 h-4 opacity-30" />
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -224,7 +302,7 @@ export const OrganizationsView: React.FC = () => {
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Headcount</span>
                   <p className="font-bold text-slate-800 flex items-center gap-1 mt-0.5">
                     <Users className="w-3.5 h-3.5 text-slate-400" />
-                    {org.headcount} Staff ({((org.headcount / totalHeadcount) * 100).toFixed(1)}%)
+                    {org.headcount} Staff ({((org.headcount / (totalHeadcount || 1)) * 100).toFixed(1)}%)
                   </p>
                 </div>
 
@@ -252,6 +330,76 @@ export const OrganizationsView: React.FC = () => {
         })}
       </div>
 
+      {/* Admin Delete Confirmation Modal */}
+      {deletingOrg && (
+        <Modal
+          isOpen={!!deletingOrg}
+          onClose={() => {
+            setDeletingOrg(null);
+            setDeleteErrorMessage(null);
+          }}
+          title={`Delete Organization: ${deletingOrg.name}`}
+          subtitle="Administrator confirmation required for permanent directory removal."
+          maxWidth="md"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeletingOrg(null);
+                  setDeleteErrorMessage(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 text-xs font-bold text-white bg-[#E31B23] hover:bg-red-700 rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Confirm Deletion
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-[#E31B23] shrink-0 mt-0.5" />
+              <div className="text-xs text-red-900 space-y-1">
+                <p className="font-bold">Warning: Permanent Action</p>
+                <p>
+                  You are about to permanently remove <strong>{deletingOrg.name} ({deletingOrg.code})</strong> from the resident directory.
+                </p>
+              </div>
+            </div>
+
+            {deleteErrorMessage && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                <p className="font-bold mb-0.5">Operation Blocked:</p>
+                <p>{deleteErrorMessage}</p>
+              </div>
+            )}
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-600 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Organization Code:</span>
+                <span className="font-mono font-bold text-slate-800">{deletingOrg.code}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Floor Space Leased:</span>
+                <span className="font-mono font-bold text-slate-800">{deletingOrg.floorAreaSqM} m²</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Headcount:</span>
+                <span className="font-mono font-bold text-slate-800">{deletingOrg.headcount} Members</span>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Add / Edit Organization Modal */}
       {showAddModal && (
         <Modal
@@ -265,14 +413,14 @@ export const OrganizationsView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md"
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md cursor-pointer"
               >
                 {editingOrg ? 'Save Changes' : 'Register Organization'}
               </button>

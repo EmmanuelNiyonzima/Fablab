@@ -271,6 +271,36 @@ app.post('/api/v1/organizations', authenticateToken, requireRole(['ADMIN', 'FINA
   }
 });
 
+app.delete('/api/v1/organizations/:id', authenticateToken, requireRole(['ADMIN']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const existing = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Organization not found.' });
+    }
+
+    const org = existing[0];
+    await db.delete(organizations).where(eq(organizations.id, id));
+
+    await recordAudit(
+      req.user!.id,
+      req.user!.name,
+      'DELETE_ORGANIZATION',
+      'ORGANIZATION',
+      id,
+      `Administrator ${req.user!.name} deleted organization ${org.name} (${org.code})`,
+      req.ip || '127.0.0.1',
+      org,
+      null
+    );
+
+    return res.json({ success: true, message: `Organization ${org.name} deleted successfully.` });
+  } catch (err: any) {
+    console.error('Delete organization error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to delete organization.' });
+  }
+});
+
 // ==========================================
 // 4. CHART OF ACCOUNTS APIs
 // ==========================================
