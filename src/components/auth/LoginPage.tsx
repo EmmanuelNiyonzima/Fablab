@@ -147,50 +147,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </p>
               </div>
             </div>
-
-            {/* Financial System Metrics */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 backdrop-blur-sm space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-xs font-semibold">Shared Facility Budget</span>
-                  <Layers className="w-4 h-4 text-[#009A44]" />
-                </div>
-                <p className="text-lg font-bold text-white font-numeric">53,200,600 RWF</p>
-                <p className="text-[11px] text-[#009A44] font-medium">4 Co-Located Organizations</p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 backdrop-blur-sm space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-xs font-semibold">General Ledger</span>
-                  <TrendingUp className="w-4 h-4 text-[#0F4C81]" />
-                </div>
-                <p className="text-lg font-bold text-white font-numeric">Zero Variance</p>
-                <p className="text-[11px] text-sky-400 font-medium">Double-Entry Audited</p>
-              </div>
-            </div>
-
-            {/* The 4 Resident Organizations (FabLab, KLab, Fab Cafe, 250Startups) */}
-            <div className="pt-1">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-2">
-                Co-Located Space Organizations:
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {[
-                  { name: 'Fablab Rwanda', share: '30%' },
-                  { name: 'Klab', share: '20%' },
-                  { name: 'Fab Cafe', share: '40%' },
-                  { name: '250Startups', share: '10%' },
-                ].map((org) => (
-                  <div
-                    key={org.name}
-                    className="px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800 text-slate-300 flex items-center justify-between"
-                  >
-                    <span className="font-semibold">{org.name}</span>
-                    <span className="font-numeric text-[11px] text-[#009A44] font-bold">{org.share}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* RIGHT: Modern White Login Card */}
