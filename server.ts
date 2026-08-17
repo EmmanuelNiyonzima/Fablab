@@ -111,7 +111,7 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
     // Strict Password Enforcement: Only 'admin123' is authorized
     if (password !== 'admin123') {
       return res.status(401).json({ 
-        error: 'Wrong password. Please try again.' 
+        error: 'Wrong password.' 
       });
     }
 

@@ -119,7 +119,7 @@ class AuthService {
       );
       return {
         success: false,
-        error: 'Wrong password. Please try again.',
+        error: 'Wrong password.',
       };
     }
 
