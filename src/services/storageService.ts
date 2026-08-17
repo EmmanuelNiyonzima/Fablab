@@ -236,6 +236,53 @@ class StorageService {
     return { success: true };
   }
 
+  // --- ALLOCATION POLICIES ---
+  public updateAllocationPolicy(id: string, updates: Partial<AllocationPolicy>): { success: boolean; error?: string } {
+    const user = this.getCurrentUser();
+    if (user.role !== 'ADMIN') {
+      return {
+        success: false,
+        error: 'Permission Denied: Only System Administrators are authorized to modify Shared Expense Allocation Policies.',
+      };
+    }
+
+    const index = this.state.allocationPolicies.findIndex((p) => p.id === id);
+    if (index === -1) {
+      return { success: false, error: 'Allocation policy not found.' };
+    }
+
+    // If rules are being updated, validate that they strictly sum to 100.0%
+    if (updates.rules && updates.rules.length > 0) {
+      const sumPercentage = updates.rules.reduce((sum, r) => sum + (r.percentage || 0), 0);
+      const is100 = Math.abs(sumPercentage - 100.0) < 0.01;
+      if (!is100) {
+        return {
+          success: false,
+          error: `Validation Error: Policy rule percentages must equal exactly 100.0% (Current sum: ${Math.round(sumPercentage * 100) / 100}%).`,
+        };
+      }
+    }
+
+    const oldPolicy = this.state.allocationPolicies[index];
+    this.state.allocationPolicies[index] = {
+      ...oldPolicy,
+      ...updates,
+      updatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+    };
+
+    this.logAudit(
+      'UPDATE_ALLOCATION_POLICY',
+      'Shared Expenses',
+      id,
+      JSON.stringify(oldPolicy.rules),
+      JSON.stringify(updates.rules || {}),
+      `Administrator ${user.name} updated allocation policy "${oldPolicy.name}" (${oldPolicy.basis})`
+    );
+
+    this.persist();
+    return { success: true };
+  }
+
   // --- ACCOUNTS ---
   public addAccount(account: Omit<Account, 'id' | 'currentBalance' | 'previousYearBalance'>): Account {
     const newAccount: Account = {
@@ -271,20 +318,6 @@ class StorageService {
     this.logAudit('CREATE_ALLOCATION_POLICY', 'Allocation Policies', newPolicy.id, undefined, `Created policy ${newPolicy.name} for ${newPolicy.categoryName}`);
     this.persist();
     return newPolicy;
-  }
-
-  public updateAllocationPolicy(id: string, updates: Partial<AllocationPolicy>) {
-    const index = this.state.allocationPolicies.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      const old = this.state.allocationPolicies[index];
-      this.state.allocationPolicies[index] = {
-        ...old,
-        ...updates,
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
-      this.logAudit('UPDATE_ALLOCATION_POLICY', 'Allocation Policies', id, JSON.stringify(old.rules), JSON.stringify(updates.rules || old.rules));
-      this.persist();
-    }
   }
 
   // --- SHARED EXPENSES ---
