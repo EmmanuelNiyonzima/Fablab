@@ -102,7 +102,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleQuickFill = (presetEmail: string) => {
     setEmail(presetEmail);
-    setPassword('admin123');
+    setPassword('');
     setValidationErrors({});
     setErrorMessage('');
   };
@@ -391,8 +391,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       )}
 
       {/* Footer */}
-      <footer className="px-6 py-3 border-t border-slate-800 text-center text-xs text-slate-400 relative z-10">
-        <p>© 2026 FabLab Rwanda. Telecom House, 6th Floor, Boulevard de l'Umuganda, Kacyiru, Kigali.</p>
+      <footer className="px-6 py-3 border-t border-slate-800 text-center text-xs text-slate-400 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>© 2026 FabLab Rwanda. Telecom House, 6th Floor, Kigali.</p>
+        <a
+          href="https://fablab-finance_management-system.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-sky-400 hover:text-sky-300 transition-colors font-mono"
+        >
+          https://fablab-finance_management-system.vercel.app/
+        </a>
       </footer>
     </div>
   );

@@ -119,7 +119,7 @@ class AuthService {
       );
       return {
         success: false,
-        error: 'Invalid password. Only authorized system password (admin123) is permitted.',
+        error: 'Wrong password. Please try again.',
       };
     }
 
