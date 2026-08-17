@@ -111,14 +111,14 @@ export const FabLabLogo: React.FC<FabLabLogoProps> = ({
     <div className={`inline-flex items-center gap-3 ${className}`}>
       {renderIcon()}
       <div className="flex flex-col justify-center">
-        <div className="flex items-center gap-1.5 leading-tight">
+        <div className="flex items-center gap-1.5 leading-tight flex-wrap">
           <span
             className={`${titleClass} tracking-tight ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}
           >
-            FabLab{' '}
-            <span className="text-[#009A44]">Rwanda</span>
+            fablab_{' '}
+            <span className="text-[#009A44]">Finance_Management System</span>
           </span>
           {size !== 'sm' && (
             <span className="px-1.5 py-0.2 text-[9px] uppercase font-bold tracking-wider rounded bg-[#0F4C81]/15 text-[#0F4C81] border border-[#0F4C81]/30 font-mono">
@@ -126,7 +126,7 @@ export const FabLabLogo: React.FC<FabLabLogoProps> = ({
             </span>
           )}
         </div>
-        {subtitle && (
+        {subtitle && subtitle !== 'fablab_ Finance_Management System' && (
           <span
             className={`${subClass} font-medium tracking-normal ${
               isLight ? 'text-slate-500' : 'text-slate-300'
