@@ -109,11 +109,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-[#0B192C] text-slate-100 flex flex-col justify-between selection:bg-[#009A44] selection:text-white relative overflow-hidden">
-      {/* Background Decorative Ambient Circles inspired by FabLab tri-color nodes */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-25">
-        <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-[#E31B23]/25 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-1/3 w-[460px] h-[460px] bg-[#0F4C81]/35 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-10 w-[380px] h-[380px] bg-[#009A44]/25 rounded-full blur-3xl" />
+      {/* High-Quality YouTube Background Video: s8MjK4lA30s with Rotation & Vibrant Clarity */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="relative w-full h-full flex items-center justify-center">
+          <iframe
+            className="w-[140vw] h-[140vh] min-w-[100vw] min-h-[100vh] max-w-none object-cover pointer-events-none filter brightness-105 contrast-105 saturate-110"
+            src="https://www.youtube-nocookie.com/embed/s8MjK4lA30s?autoplay=1&mute=1&loop=1&playlist=s8MjK4lA30s&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1&playsinline=1&enablejsapi=1"
+            title="FabLab Background Video"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            frameBorder="0"
+          />
+        </div>
+
+        {/* Cinematic Translucent Vignette & Atmospheric Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/88 via-[#0B192C]/50 to-[#0B192C]/82 backdrop-blur-[0.5px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,25,44,0.2)_0%,rgba(11,25,44,0.85)_100%)]" />
+
+        {/* Smooth Atmospheric Rotating Glow Nodes */}
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] border border-[#009A44]/25 rounded-full animate-spin [animation-duration:40s] pointer-events-none blur-[0.5px]" />
+        <div className="absolute top-1/3 left-1/6 w-[620px] h-[620px] border border-dashed border-[#0F4C81]/30 rounded-full animate-spin [animation-duration:55s] [animation-direction:reverse] pointer-events-none" />
+        <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-[#E31B23]/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 w-[460px] h-[460px] bg-[#0F4C81]/30 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-10 w-[380px] h-[380px] bg-[#009A44]/20 rounded-full blur-3xl" />
       </div>
 
       {/* Top Header */}
@@ -134,13 +151,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           
           {/* LEFT: FabLab Brand Identity & Financial Intelligence */}
           <div className="hidden lg:flex lg:col-span-6 flex-col justify-center space-y-6 text-slate-200">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
+            <div className="p-8 rounded-3xl bg-[#0B192C]/60 backdrop-blur-md border border-slate-700/60 shadow-2xl space-y-4 max-w-lg">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#009A44]/20 border border-[#009A44]/40 text-[#009A44] text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-[#009A44] animate-ping" />
+                  <span>FabLab Rwanda Financial Core</span>
+                </div>
+                <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                   <span className="text-white">fablab_</span> <br />
                   <span className="text-[#009A44]">Finance_Management System</span>
                 </h1>
-                <p className="text-sm text-slate-300 leading-relaxed max-w-md pt-1">
+                <p className="text-sm text-slate-300 leading-relaxed drop-shadow-xs">
                   Powering smarter financial decisions through accurate data and intelligent reporting.
                 </p>
               </div>
