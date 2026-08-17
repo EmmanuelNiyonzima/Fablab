@@ -184,6 +184,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
 
+          {/* Direct Sign Out / Lock Session Trigger */}
+          <button
+            type="button"
+            onClick={onLogout}
+            title="Lock Session and Go to Login Page"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-[#E31B23] border border-slate-200 hover:border-red-200 rounded-lg transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Sign Out</span>
+          </button>
+
           {/* Quick Database Reset Tool */}
           <button
             type="button"
