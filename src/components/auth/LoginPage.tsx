@@ -135,8 +135,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* LEFT: FabLab Brand Identity & Financial Intelligence */}
           <div className="hidden lg:flex lg:col-span-6 flex-col justify-center space-y-6 text-slate-200">
             <div className="space-y-4">
-              <FabLabLogo size="xl" theme="dark" subtitle="" />
-
               <div className="space-y-2">
                 <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
                   <span className="text-white">fablab_</span> <br />
