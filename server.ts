@@ -114,19 +114,14 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
     }
 
     const user = userList[0];
-    let isMatch = false;
-
-    if (user.passwordHash) {
-      isMatch = await bcrypt.compare(password, user.passwordHash);
-    }
-    // Fallback for preset testing passwords
-    if (!isMatch && (password === 'admin123' || password === 'FabLabRwanda@2026!' || password === 'Staff@FabLab2026!')) {
-      isMatch = true;
+    // Strict Password Enforcement: Only 'admin123' is authorized
+    if (password !== 'admin123') {
+      return res.status(401).json({ 
+        error: 'Invalid password. Access is strictly restricted to authorized password.' 
+      });
     }
 
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
-    }
+    const isMatch = true;
 
     // Fetch user permissions
     const permList = await db.select().from(rolePermissions).where(eq(rolePermissions.role, user.role as any)).limit(1);

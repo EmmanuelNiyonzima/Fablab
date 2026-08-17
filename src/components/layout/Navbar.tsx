@@ -140,11 +140,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Page Title & Breadcrumbs */}
+          {/* Page Title & Breadcrumbs with fablab_ Finance_Management System title */}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <span className="text-[#0F4C81] font-semibold">{breadcrumb.category}</span>
-              <span>/</span>
+              <button
+                type="button"
+                onClick={() => onNavigate('dashboard')}
+                className="font-bold text-[#0F4C81] hover:text-[#0A3962] hover:underline cursor-pointer flex items-center gap-1"
+                title="Go to Dashboard"
+              >
+                <span>fablab_ Finance_Management System</span>
+              </button>
+              <span className="text-slate-300">/</span>
+              <span className="text-[#009A44] font-semibold">{breadcrumb.category}</span>
+              <span className="text-slate-300">/</span>
               <span className="text-slate-800 font-bold truncate">{breadcrumb.title}</span>
             </div>
           </div>

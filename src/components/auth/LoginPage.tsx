@@ -118,7 +118,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       {/* Top Header */}
       <header className="px-6 py-4 border-b border-slate-800/80 bg-[#0B192C]/90 backdrop-blur-md relative z-10 flex items-center justify-between">
-        <FabLabLogo size="md" theme="dark" subtitle="Financial Management System" />
+        <FabLabLogo size="md" theme="dark" subtitle="fablab_ Finance_Management System" />
 
         <div className="hidden sm:flex items-center gap-2 text-xs">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0F4C81]/25 border border-[#0F4C81]/50 text-sky-200 font-mono text-[11px]">
@@ -139,8 +139,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
               <div className="space-y-2">
                 <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
-                  FabLab Rwanda <br />
-                  <span className="text-[#009A44]">Financial Management System</span>
+                  <span className="text-white">fablab_</span> <br />
+                  <span className="text-[#009A44]">Finance_Management System</span>
                 </h1>
                 <p className="text-sm text-slate-300 leading-relaxed max-w-md pt-1">
                   Powering smarter financial decisions through accurate data and intelligent reporting.

@@ -108,6 +108,21 @@ class AuthService {
   ): Promise<{ success: boolean; user?: User; error?: string }> {
     const trimmedEmail = email.trim().toLowerCase();
 
+    // Strict Password Enforcement: Only 'admin123' is authorized for system access
+    if (password !== 'admin123') {
+      storageService.logAudit(
+        'LOGIN_FAILED',
+        'Authentication',
+        trimmedEmail,
+        undefined,
+        `Failed login attempt for ${trimmedEmail} (incorrect password)`
+      );
+      return {
+        success: false,
+        error: 'Invalid password. Only authorized system password (admin123) is permitted.',
+      };
+    }
+
     try {
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',

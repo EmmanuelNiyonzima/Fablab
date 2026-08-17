@@ -232,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           className="h-16 px-4 flex items-center border-b border-[#0B3B66] bg-[#0B3B66]/60 cursor-pointer group"
         >
-          <FabLabLogo size="md" theme="dark" subtitle="Financial Core" />
+          <FabLabLogo size="md" theme="dark" subtitle="fablab_ Finance_Management System" />
         </div>
 
         {/* Navigation Content */}
