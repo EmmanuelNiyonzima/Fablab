@@ -5,7 +5,7 @@ import { FinancialCalculator } from './calculationService';
 
 export class ExportService {
   /**
-   * Export JSON data to styled Excel Sheet (.xlsx)
+   * Export JSON data to styled Excel Sheet (.xlsx) with FabLab Rwanda Official Header
    */
   static exportToExcel(
     title: string,
@@ -16,9 +16,11 @@ export class ExportService {
   ) {
     const wb = XLSX.utils.book_new();
 
-    // Prepare content matrix
+    // Prepare content matrix with branded header
     const matrix: (string | number)[][] = [
-      ['FABLAB RWANDA - FINANCIAL MANAGEMENT SYSTEM'],
+      ['FABLAB RWANDA - FINANCIAL MANAGEMENT SYSTEM (FMS)'],
+      ['Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali, Rwanda'],
+      ['Logo & Brand: FabLab Rwanda Multi-Entity Financial Governance'],
       [`Report Title: ${title}`],
       [`Generated Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`],
       [`Currency: RWF (Rwandan Francs)`],
@@ -58,7 +60,45 @@ export class ExportService {
   }
 
   /**
-   * Export Report to PDF with FabLab Rwanda Letterhead
+   * Helper to draw the authentic FabLab Rwanda logo vector directly into the jsPDF canvas
+   */
+  private static drawFabLabLogo(doc: jsPDF, x: number, y: number, radius: number = 8) {
+    // Background disc
+    doc.setFillColor(11, 25, 44); // Dark Navy #0B192C
+    doc.circle(x, y, radius, 'F');
+
+    // Connector technical lines
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.6);
+    doc.line(x - radius * 0.4, y - radius * 0.35, x + radius * 0.4, y - radius * 0.35);
+    doc.line(x - radius * 0.4, y - radius * 0.35, x, y + radius * 0.45);
+    doc.line(x + radius * 0.4, y - radius * 0.35, x, y + radius * 0.45);
+
+    // Center hub
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x, y - radius * 0.05, radius * 0.16, 'F');
+
+    // Top-Left Node (FabLab Red #E31B23)
+    doc.setFillColor(227, 27, 35);
+    doc.circle(x - radius * 0.42, y - radius * 0.35, radius * 0.3, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x - radius * 0.42, y - radius * 0.35, radius * 0.1, 'F');
+
+    // Top-Right Node (FabLab Green #009A44)
+    doc.setFillColor(0, 154, 68);
+    doc.circle(x + radius * 0.42, y - radius * 0.35, radius * 0.3, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x + radius * 0.42, y - radius * 0.35, radius * 0.1, 'F');
+
+    // Bottom Node (FabLab Blue #0F4C81)
+    doc.setFillColor(15, 76, 129);
+    doc.circle(x, y + radius * 0.45, radius * 0.3, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.circle(x, y + radius * 0.45, radius * 0.1, 'F');
+  }
+
+  /**
+   * Export Report to PDF with FabLab Rwanda High-Res Vector Brand Letterhead
    */
   static exportToPDF(
     title: string,
@@ -82,39 +122,54 @@ export class ExportService {
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Top Header Banner
-    doc.setFillColor(15, 23, 42); // Deep Navy (#0f172a)
-    doc.rect(0, 0, pageWidth, 28, 'F');
+    doc.setFillColor(11, 25, 44); // Deep Navy (#0B192C)
+    doc.rect(0, 0, pageWidth, 30, 'F');
 
-    // Accent line
-    doc.setFillColor(16, 185, 129); // FabLab Emerald Green (#10b981)
-    doc.rect(0, 28, pageWidth, 2, 'F');
+    // Accent line (FabLab Tri-color strip)
+    doc.setFillColor(227, 27, 35); // Red
+    doc.rect(0, 30, pageWidth * 0.33, 2, 'F');
+    doc.setFillColor(0, 154, 68); // Green
+    doc.rect(pageWidth * 0.33, 30, pageWidth * 0.34, 2, 'F');
+    doc.setFillColor(15, 76, 129); // Blue
+    doc.rect(pageWidth * 0.67, 30, pageWidth * 0.33, 2, 'F');
 
-    // Organization Name
+    // Render FabLab Official Tri-Color Vector Logo in Header
+    this.drawFabLabLogo(doc, 22, 15, 9);
+
+    // Organization Brand Typography
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('FABLAB RWANDA', 14, 12);
+    doc.text('FABLAB RWANDA', 36, 13);
 
-    doc.setFontSize(9);
+    // Mini FMS badge
+    doc.setFillColor(15, 76, 129);
+    doc.roundedRect(88, 7.5, 12, 6, 1, 1, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('FMS', 91, 11.5);
+
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(203, 213, 225);
-    doc.text('Center for Innovation & Digital Fabrication | Kigali, Rwanda', 14, 18);
-    doc.text(`Official Financial Report | Currency: RWF`, 14, 23);
+    doc.text('Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali', 36, 19);
+    doc.text('Official Financial & Cost-Sharing Governance Report | Currency: RWF', 36, 24);
 
     // Title Section
     doc.setTextColor(15, 23, 42);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, 14, 38);
+    doc.text(title, 14, 40);
 
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
     const dateStr = `Generated: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
     const authorStr = options?.generatedBy ? ` | Prepared by: ${options.generatedBy}` : '';
-    doc.text(`${dateStr}${authorStr}`, 14, 44);
+    doc.text(`${dateStr}${authorStr}`, 14, 46);
 
-    let startY = 48;
+    let startY = 50;
 
     // Summary Stat Badges if provided
     if (options?.summaryStats && options.summaryStats.length > 0) {
@@ -149,7 +204,7 @@ export class ExportService {
         lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: [15, 23, 42],
+        fillColor: [11, 25, 44],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 8.5,
@@ -158,7 +213,7 @@ export class ExportService {
         fillColor: [248, 250, 252],
       },
       didDrawPage: (data) => {
-        // Footer with Page Number
+        // Footer with Page Number & FabLab Mini Mark
         const pageCount = (doc.internal as any).getNumberOfPages();
         const pageCurrent = data.pageNumber;
         doc.setFontSize(8);
@@ -179,3 +234,4 @@ export class ExportService {
     doc.save(`${filename.replace(/\.pdf$/i, '')}_${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 }
+
