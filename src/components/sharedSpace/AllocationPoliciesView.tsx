@@ -82,6 +82,37 @@ export const AllocationPoliciesView: React.FC = () => {
     setSuccessMessage(null);
   };
 
+  // Smart helper to normalize all current proportions proportionally to exactly 100%
+  const handleNormalizeTo100 = () => {
+    if (!isAdmin || editingRules.length === 0) return;
+    const currentSum = editingRules.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0);
+    if (currentSum === 0) {
+      // Equal split
+      const equalShare = Math.round((100 / editingRules.length) * 10) / 10;
+      setEditingRules((prev) =>
+        prev.map((r, idx) => ({
+          ...r,
+          percentage: idx === prev.length - 1 ? Math.round((100 - equalShare * (prev.length - 1)) * 10) / 10 : equalShare,
+        }))
+      );
+    } else {
+      // Scale proportionally
+      let runningSum = 0;
+      const normalized = editingRules.map((r, idx) => {
+        if (idx === editingRules.length - 1) {
+          const lastVal = Math.round((100 - runningSum) * 10) / 10;
+          return { ...r, percentage: Math.max(0, lastVal) };
+        }
+        const scaled = Math.round(((r.percentage || 0) / currentSum) * 1000) / 10;
+        runningSum += scaled;
+        return { ...r, percentage: scaled };
+      });
+      setEditingRules(normalized);
+    }
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
   const handleStartEditing = () => {
     if (!isAdmin) {
       alert('Access Restricted: Only System Administrators have permission to adjust shared expense allocation policies.');
@@ -305,12 +336,15 @@ export const AllocationPoliciesView: React.FC = () => {
             <DiscrepancyBanner
               isBalanced={is100Percent}
               difference={Math.abs(differenceTo100)}
+              unit="%"
               moduleName="Policy Allocation Rules"
               message={
                 is100Percent
                   ? `Rules strictly total 100.0%. All shared expenses under this policy will distribute with zero variance.`
-                  : `Policy rule percentages sum to ${currentTotalPercentage}%. Must equal exactly 100.0% (Remaining: ${differenceTo100 > 0 ? '+' : ''}${differenceTo100}%).`
+                  : `Policy rule percentages sum to ${currentTotalPercentage}%. They must equal exactly 100.0% to be saved.`
               }
+              actionText={isEditing && isAdmin && !is100Percent ? 'Auto-Balance to 100%' : undefined}
+              onAction={isEditing && isAdmin && !is100Percent ? handleNormalizeTo100 : undefined}
             />
 
             {/* Rules Adjuster Sliders & Inputs */}

@@ -7,6 +7,7 @@ interface DiscrepancyBannerProps {
   difference?: number;
   message?: string;
   moduleName?: string;
+  unit?: string;
   actionText?: string;
   onAction?: () => void;
 }
@@ -17,6 +18,7 @@ export const DiscrepancyBanner: React.FC<DiscrepancyBannerProps> = ({
   difference = 0,
   message,
   moduleName = 'Allocation',
+  unit = 'RWF',
   actionText,
   onAction,
 }) => {
@@ -28,7 +30,7 @@ export const DiscrepancyBanner: React.FC<DiscrepancyBannerProps> = ({
           <span className="font-semibold">Reconciliation Verified:</span>
           <span>{message || `${moduleName} totals are strictly balanced and 100% reconciled.`}</span>
         </div>
-        <span className="font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">BALANCED (0 RWF Diff)</span>
+        <span className="font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">BALANCED (0 {unit} Diff)</span>
       </div>
     );
   }
@@ -38,21 +40,21 @@ export const DiscrepancyBanner: React.FC<DiscrepancyBannerProps> = ({
       <div className="flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold text-rose-800 text-sm">Financial Discrepancy Detected in {moduleName}</p>
+          <p className="font-bold text-rose-800 text-sm">Discrepancy Detected in {moduleName}</p>
           <p className="mt-0.5 text-rose-700">
-            {message || `The sum of allocated lines does not match the source transaction. Variance: ${difference.toLocaleString()} RWF.`}
+            {message || `The sum of allocated lines does not match 100.0%. Variance: ${difference.toLocaleString()} ${unit}.`}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-2 self-end sm:self-center">
-        <span className="font-bold text-rose-700 bg-rose-100 px-2.5 py-1 rounded-md">
-          Diff: {difference.toLocaleString()} RWF
+        <span className="font-bold text-rose-700 bg-rose-100 px-2.5 py-1 rounded-md whitespace-nowrap">
+          Diff: {difference.toLocaleString()} {unit}
         </span>
         {actionText && onAction && (
           <button
             type="button"
             onClick={onAction}
-            className="px-3 py-1 bg-rose-700 hover:bg-rose-800 text-white font-semibold rounded-lg shadow-xs transition-colors cursor-pointer"
+            className="px-3 py-1 bg-rose-700 hover:bg-rose-800 text-white font-semibold rounded-lg shadow-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             {actionText}
           </button>
