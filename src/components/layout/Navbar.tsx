@@ -176,9 +176,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* Right: Integrity Badge, Notifications, Profile Dropdown */}
+        {/* Right: Security Badge, Integrity Badge, Notifications, Profile Dropdown */}
         <div className="flex items-center gap-2 shrink-0">
           
+          {/* 256-Bit Financial Encryption Status Badge (Visible inside authenticated portal) */}
+          <div 
+            title="Session secured with 256-Bit Financial Encryption"
+            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg shadow-2xs"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#009A44]" />
+            <span className="text-[11px] font-medium hidden lg:inline">256-Bit Financial Encryption</span>
+            <span className="text-[11px] font-medium lg:hidden">256-Bit Encrypted</span>
+          </div>
+
           {/* Integrity Test Suite button (FabLab Green Accent) */}
           <button
             type="button"

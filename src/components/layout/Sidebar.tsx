@@ -22,7 +22,8 @@ import {
   History, 
   Settings, 
   UploadCloud,
-  ChevronRight
+  ChevronRight,
+  Lock
 } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 import { AccountingService } from '../../services/accountingService';
@@ -294,8 +295,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </div>
 
-        {/* Bottom Facility Space Summary */}
-        <div className="p-3 border-t border-[#0B3B66] bg-[#0B3B66]/40">
+        {/* Bottom Facility Space Summary & Security Status */}
+        <div className="p-3 border-t border-[#0B3B66] bg-[#0B3B66]/40 space-y-2">
           <div className="p-2.5 rounded-lg bg-black/20 border border-white/10 text-[11px]">
             <div className="flex items-center justify-between text-sky-200 mb-1">
               <span className="font-bold text-white">Facility Space</span>
@@ -305,6 +306,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Budget: 53.2M RWF</span>
               <span className="text-[#009A44] font-bold">4 Orgs</span>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between px-2 py-1 rounded-md bg-[#009A44]/15 border border-[#009A44]/30 text-[10px] text-emerald-300 font-mono">
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-3 h-3 text-[#009A44]" />
+              <span>256-Bit Financial Encryption</span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#009A44] animate-pulse" />
           </div>
         </div>
       </aside>

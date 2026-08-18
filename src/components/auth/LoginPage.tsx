@@ -136,13 +136,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       {/* Top Header */}
       <header className="px-6 py-4 border-b border-slate-800/80 bg-[#0B192C]/90 backdrop-blur-md relative z-10 flex items-center justify-between">
         <FabLabLogo size="md" theme="dark" subtitle="fablab_ Finance_Management System" />
-
-        <div className="hidden sm:flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0F4C81]/25 border border-[#0F4C81]/50 text-sky-200 font-mono text-[11px]">
-            <span className="w-2 h-2 rounded-full bg-[#009A44] animate-pulse" />
-            <span>256-Bit Financial Encryption</span>
-          </div>
-        </div>
       </header>
 
       {/* Main Split Layout */}
