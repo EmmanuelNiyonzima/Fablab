@@ -221,31 +221,30 @@ export default function App() {
       isLoading={authState.isLoading}
       onRedirectToLogin={() => {}}
     >
-      <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-white">
-        {/* Top Navigation Bar */}
-        <Navbar
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onOpenTestSuite={() => setIsTestSuiteOpen(true)}
-          onLogout={handleLogout}
+      <div className="min-h-screen bg-slate-100 text-slate-900 flex font-sans antialiased selection:bg-[#009A44] selection:text-white">
+        {/* Persistent Collapsible Sidebar */}
+        <Sidebar
+          currentModule={currentModule}
           onNavigate={handleNavigate}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
 
-        {/* Main Layout Body */}
-        <div className="flex-1 flex pt-0">
-          {/* Persistent Collapsible Sidebar */}
-          <Sidebar
+        {/* Main Content Area (Offset by Sidebar on Desktop) */}
+        <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+          {/* Top Navigation Bar */}
+          <Navbar
             currentModule={currentModule}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenTestSuite={() => setIsTestSuiteOpen(true)}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
           />
 
           {/* Content Canvas */}
-          <main className="flex-1 lg:pl-64 min-w-0 transition-all duration-200">
-            <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-              {renderView()}
-            </div>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+            {renderView()}
           </main>
         </div>
 

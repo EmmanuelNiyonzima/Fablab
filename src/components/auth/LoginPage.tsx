@@ -405,14 +405,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       {/* Footer */}
       <footer className="px-6 py-3 border-t border-slate-800 text-center text-xs text-slate-400 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>© 2026 FabLab Rwanda. Telecom House, 6th Floor, Kigali.</p>
-        <a
-          href="https://fablab-finance_management-system.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-sky-400 hover:text-sky-300 transition-colors font-mono"
-        >
-          https://fablab-finance_management-system.vercel.app/
-        </a>
+        <p className="text-slate-500 font-mono text-[11px]">Authorized Access Only</p>
       </footer>
     </div>
   );

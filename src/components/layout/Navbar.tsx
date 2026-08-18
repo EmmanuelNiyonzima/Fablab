@@ -151,19 +151,19 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Center: Global Search Bar */}
-        <div className="hidden md:flex items-center flex-1 max-w-sm lg:max-w-md mx-2">
+        <div className="hidden md:flex items-center flex-1 max-w-md mx-3">
           <button
             type="button"
             onClick={onOpenSearch}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 text-xs bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 transition-all cursor-pointer shadow-2xs group whitespace-nowrap"
+            className="w-full flex items-center justify-between px-3.5 py-2 text-xs bg-slate-50/90 hover:bg-slate-100 border border-slate-200/90 hover:border-slate-300 rounded-xl text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-2xs group"
           >
-            <div className="flex items-center gap-2 min-w-0 mr-2">
-              <Search className="w-3.5 h-3.5 shrink-0 text-[#0F4C81] group-hover:text-[#0A3962]" />
-              <span className="text-slate-400 group-hover:text-slate-600 truncate text-[11px]">
+            <div className="flex items-center gap-2.5 min-w-0 mr-2">
+              <Search className="w-4 h-4 shrink-0 text-[#0F4C81] group-hover:text-[#0A3962] transition-colors" />
+              <span className="text-slate-500 group-hover:text-slate-700 font-normal text-xs truncate">
                 Search transactions, accounts, orgs...
               </span>
             </div>
-            <kbd className="hidden lg:inline-block shrink-0 px-1.5 py-0.5 text-[10px] font-mono bg-white text-slate-600 rounded border border-slate-200 shadow-2xs">
+            <kbd className="inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-semibold bg-white text-slate-600 rounded-md border border-slate-200 shadow-2xs">
               Ctrl+K
             </kbd>
           </button>

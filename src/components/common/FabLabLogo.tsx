@@ -108,33 +108,24 @@ export const FabLabLogo: React.FC<FabLabLogoProps> = ({
   }
 
   return (
-    <div className={`inline-flex items-center gap-3 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 ${className}`}>
       {renderIcon()}
-      <div className="flex flex-col justify-center">
-        <div className="flex items-center gap-1.5 leading-tight flex-wrap">
+      <div className="flex flex-col justify-center min-w-0">
+        <div className="flex items-center gap-1.5 leading-tight">
           <span
-            className={`${titleClass} tracking-tight ${
+            className={`font-black text-sm tracking-tight ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}
           >
-            fablab_{' '}
-            <span className="text-[#009A44]">Finance_Management System</span>
+            fablab<span className="text-[#009A44]">_</span>
           </span>
-          {size !== 'sm' && (
-            <span className="px-1.5 py-0.2 text-[9px] uppercase font-bold tracking-wider rounded bg-[#0F4C81]/15 text-[#0F4C81] border border-[#0F4C81]/30 font-mono">
-              FMS
-            </span>
-          )}
+          <span className="px-1.5 py-0.2 text-[8px] uppercase font-bold tracking-wider rounded bg-[#009A44]/20 text-[#A7E7BF] border border-[#009A44]/35 font-mono">
+            FMS
+          </span>
         </div>
-        {subtitle && subtitle !== 'fablab_ Finance_Management System' && (
-          <span
-            className={`${subClass} font-medium tracking-normal ${
-              isLight ? 'text-slate-500' : 'text-slate-300'
-            }`}
-          >
-            {subtitle}
-          </span>
-        )}
+        <span className="text-[11px] font-bold text-[#009A44] leading-tight tracking-tight whitespace-nowrap">
+          Finance_Management System
+        </span>
       </div>
     </div>
   );
