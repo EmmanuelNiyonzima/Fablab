@@ -127,66 +127,58 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-      <div className="px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="px-4 lg:px-6 h-16 flex items-center justify-between gap-3 lg:gap-5">
         
         {/* Left: Mobile Sidebar Trigger + Breadcrumb */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 shrink">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
             aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Page Title & Breadcrumbs with fablab_ Finance_Management System title */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <button
-                type="button"
-                onClick={() => onNavigate('dashboard')}
-                className="font-bold text-[#0F4C81] hover:text-[#0A3962] hover:underline cursor-pointer flex items-center gap-1"
-                title="Go to Dashboard"
-              >
-                <span>fablab_ Finance_Management System</span>
-              </button>
-              <span className="text-slate-300">/</span>
-              <span className="text-[#009A44] font-semibold">{breadcrumb.category}</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-800 font-bold truncate">{breadcrumb.title}</span>
-            </div>
+          {/* Clean Page Title & Breadcrumbs */}
+          <div className="flex items-center gap-1.5 text-xs min-w-0">
+            <span className="text-slate-500 font-medium whitespace-nowrap">{breadcrumb.category}</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-900 font-bold text-sm tracking-tight truncate max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">
+              {breadcrumb.title}
+            </span>
           </div>
         </div>
 
         {/* Center: Global Search Bar */}
-        <div className="hidden md:flex items-center flex-1 max-w-md mx-2">
+        <div className="hidden md:flex items-center flex-1 max-w-sm lg:max-w-md mx-2">
           <button
             type="button"
             onClick={onOpenSearch}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 text-xs bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 transition-all cursor-pointer shadow-2xs group"
+            className="w-full flex items-center justify-between px-3.5 py-1.5 text-xs bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 transition-all cursor-pointer shadow-2xs group whitespace-nowrap"
           >
-            <div className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-[#0F4C81] group-hover:text-[#0A3962]" />
-              <span className="text-slate-400 group-hover:text-slate-600">Search transactions, accounts, organizations...</span>
+            <div className="flex items-center gap-2 min-w-0 mr-2">
+              <Search className="w-3.5 h-3.5 shrink-0 text-[#0F4C81] group-hover:text-[#0A3962]" />
+              <span className="text-slate-400 group-hover:text-slate-600 truncate text-[11px]">
+                Search transactions, accounts, orgs...
+              </span>
             </div>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white text-slate-600 rounded border border-slate-200 shadow-2xs">
+            <kbd className="hidden lg:inline-block shrink-0 px-1.5 py-0.5 text-[10px] font-mono bg-white text-slate-600 rounded border border-slate-200 shadow-2xs">
               Ctrl+K
             </kbd>
           </button>
         </div>
 
-        {/* Right: Security Badge, Integrity Badge, Notifications, Profile Dropdown */}
+        {/* Right: Security Badge, Integrity Badge, Quick Actions, Profile Dropdown */}
         <div className="flex items-center gap-2 shrink-0">
           
-          {/* 256-Bit Financial Encryption Status Badge (Visible inside authenticated portal) */}
+          {/* 256-Bit Financial Encryption Status Badge */}
           <div 
-            title="Session secured with 256-Bit Financial Encryption"
-            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg shadow-2xs"
+            title="Active Session Protected by 256-Bit Financial Encryption"
+            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg shadow-2xs whitespace-nowrap shrink-0"
           >
             <Lock className="w-3.5 h-3.5 text-[#009A44]" />
-            <span className="text-[11px] font-medium hidden lg:inline">256-Bit Financial Encryption</span>
-            <span className="text-[11px] font-medium lg:hidden">256-Bit Encrypted</span>
+            <span className="text-[11px] font-medium">256-Bit Financial Encryption</span>
           </div>
 
           {/* Integrity Test Suite button (FabLab Green Accent) */}
@@ -194,24 +186,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onOpenTestSuite}
             title="Run 12 Mandatory Calculation Integrity Tests"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#E8F8EE] hover:bg-[#D7F2E0] border border-[#A7E7BF] text-[#007D37] rounded-lg transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold bg-[#E8F8EE] hover:bg-[#D7F2E0] border border-[#A7E7BF] text-[#007D37] rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
             <ShieldCheck className="w-4 h-4 text-[#009A44]" />
-            <span className="hidden xl:inline">Integrity</span>
+            <span className="hidden lg:inline">Integrity</span>
             <span className="px-1.5 py-0.2 text-[10px] bg-[#009A44] text-white rounded font-mono font-bold">
               12/12
             </span>
-          </button>
-
-          {/* Direct Sign Out / Lock Session Trigger */}
-          <button
-            type="button"
-            onClick={onLogout}
-            title="Lock Session and Go to Login Page"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-[#E31B23] border border-slate-200 hover:border-red-200 rounded-lg transition-colors cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Sign Out</span>
           </button>
 
           {/* Quick Database Reset Tool */}
@@ -219,13 +200,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={handleReset}
             title="Reset to 2026 Baseline Seed Data"
-            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
 
           {/* Notifications Trigger */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
@@ -255,6 +236,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
           </div>
+
+          <div className="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block" />
+
+          {/* Direct Sign Out Trigger */}
+          <button
+            type="button"
+            onClick={onLogout}
+            title="Lock Session and Go to Login Page"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-slate-50 hover:bg-red-50 text-slate-700 hover:text-[#E31B23] border border-slate-200 hover:border-red-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Sign Out</span>
+          </button>
 
           {/* User Account Menu Dropdown */}
           <div className="relative">
