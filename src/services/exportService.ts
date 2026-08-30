@@ -20,6 +20,64 @@ function toCellRef(col: number, row: number): string {
 
 export class ExportService {
   /**
+   * Applies corporate financial formatting across worksheets:
+   * - Format currency: #,##0.00;[Red]-#,##0.00;"-"
+   * - Format percentages: 0.00%
+   * - Format quantities/integers: #,##0
+   * - Auto-calculate responsive column widths
+   */
+  static applyProfessionalWorkbookFormatting(wb: XLSX.WorkBook) {
+    wb.SheetNames.forEach((sheetName) => {
+      const ws = wb.Sheets[sheetName];
+      if (!ws || !ws['!ref']) return;
+
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      const colMaxLens: number[] = [];
+
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        colMaxLens[c] = 12;
+      }
+
+      for (let r = range.s.r; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const cellRef = XLSX.utils.encode_cell({ r, c });
+          const cell = ws[cellRef];
+          if (!cell) continue;
+
+          // Track string length for auto-width
+          const str = cell.v !== undefined && cell.v !== null ? String(cell.v) : '';
+          if (str.length > colMaxLens[c]) {
+            colMaxLens[c] = Math.min(str.length + 3, 50);
+          }
+
+          // Format numbers and formulas
+          if (cell.t === 'n' || cell.f) {
+            const val = typeof cell.v === 'number' ? cell.v : 0;
+            // Percentage
+            if (cell.t === 'n' && val > 0 && val <= 1 && Math.abs(val) !== 1) {
+              cell.z = '0.00%';
+            } else if (cell.t === 'n' && Number.isInteger(val) && val >= 0 && val <= 500 && !cell.f) {
+              // Item count, staff, area count
+              cell.z = '#,##0';
+            } else {
+              // Financial amounts
+              cell.z = '#,##0.00;[Red]-#,##0.00;"-"';
+            }
+          }
+        }
+      }
+
+      if (!ws['!cols'] || ws['!cols'].length === 0) {
+        ws['!cols'] = colMaxLens.map((w) => ({ wch: w }));
+      } else {
+        ws['!cols'] = ws['!cols'].map((col, idx) => ({
+          wch: Math.max(col?.wch || 12, colMaxLens[idx] || 12),
+        }));
+      }
+    });
+  }
+
+  /**
    * Export Full Management Multi-Sheet Excel Workbook
    * 
    * Sheets:
@@ -625,6 +683,9 @@ export class ExportService {
     wsTx['!views'] = [{ state: 'frozen', ySplit: 5 }];
     XLSX.utils.book_append_sheet(wb, wsTx, 'Transaction Details');
 
+    // Format professional numbers, currencies, and auto-fit columns
+    this.applyProfessionalWorkbookFormatting(wb);
+
     // ==========================================
     // WRITE FILE
     // ==========================================
@@ -706,6 +767,7 @@ export class ExportService {
 
     const safeSheetName = title.slice(0, 31).replace(/[:\/\\?*\[\]]/g, '');
     XLSX.utils.book_append_sheet(wb, ws, safeSheetName || 'Financial Report');
+    this.applyProfessionalWorkbookFormatting(wb);
     XLSX.writeFile(wb, `${filename.replace(/\.xlsx$/i, '')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
@@ -1364,6 +1426,9 @@ export class ExportService {
     ];
     wsCat['!views'] = [{ state: 'frozen', ySplit: 4 }];
     XLSX.utils.book_append_sheet(wb, wsCat, 'Category Breakdown');
+
+    // Format workbook
+    this.applyProfessionalWorkbookFormatting(wb);
 
     // Write file
     const finalFileName = `SEMS_Shared_Expenses_Official_Workbook_${dateShort}.xlsx`;

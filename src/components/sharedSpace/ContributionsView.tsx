@@ -10,7 +10,9 @@ import {
   Building2, 
   FileSpreadsheet,
   FileText,
-  DollarSign
+  DollarSign,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -18,6 +20,7 @@ import { Modal } from '../common/Modal';
 import { storageService } from '../../services/storageService';
 import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
+import { SecurityScope } from '../../utils/securityScope';
 import { Contribution, ContributionStatus, PaymentMethod } from '../../types/financial';
 
 export const ContributionsView: React.FC = () => {
@@ -35,24 +38,29 @@ export const ContributionsView: React.FC = () => {
   const [paymentNotes, setPaymentNotes] = useState('');
 
   const state = storageService.getState();
-  const contributions = state.contributions;
+  const currentUser = state.currentUser;
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
+
+  // Apply Department Data Isolation
+  const accessibleContributions = SecurityScope.filterContributions(state.contributions, currentUser);
   const organizations = state.organizations;
 
-  const filteredContributions = contributions.filter((c) => {
+  const filteredContributions = accessibleContributions.filter((c) => {
     const matchesSearch =
       c.orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.billingPeriod.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.reference && c.reference.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesOrg = orgFilter === 'all' || c.orgId === orgFilter;
+    const matchesOrg = !isAdmin || orgFilter === 'all' || c.orgId === orgFilter;
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
 
     return matchesSearch && matchesOrg && matchesStatus;
   });
 
-  const totalExpected = contributions.reduce((sum, c) => sum + c.expectedAmount, 0);
-  const totalReceived = contributions.reduce((sum, c) => sum + c.receivedAmount, 0);
-  const totalOutstanding = contributions.reduce((sum, c) => sum + c.outstandingBalance, 0);
+  const totalExpected = accessibleContributions.reduce((sum, c) => sum + c.expectedAmount, 0);
+  const totalReceived = accessibleContributions.reduce((sum, c) => sum + c.receivedAmount, 0);
+  const totalOutstanding = accessibleContributions.reduce((sum, c) => sum + c.outstandingBalance, 0);
 
   const handleOpenPayment = (c: Contribution) => {
     setSelectedContribution(c);
@@ -122,22 +130,35 @@ export const ContributionsView: React.FC = () => {
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Resident Contributions & Cost Recovery</h2>
-            <Badge variant="purple">Double-Entry Synced</Badge>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {isAdmin ? 'Resident Contributions & Cost Recovery' : `${userOrg?.name || 'Department'} Contributions & Dues`}
+            </h2>
+            {isAdmin ? (
+              <Badge variant="purple">Super Admin View</Badge>
+            ) : (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded-md flex items-center gap-1">
+                <Lock className="w-3 h-3 text-purple-600" />
+                Department Isolated
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Tracking partner cost share billing, bank remittances, receipts, and accounts receivable aging.
+            {isAdmin 
+              ? 'Consolidated partner cost share billing, bank remittances, receipts, and accounts receivable aging across all 4 departments.'
+              : `Tracking your department's cost share billing, bank payment records, and remittance status.`}
           </p>
         </div>
 
         <div className="flex items-center gap-4 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
           <div>
-            <p className="text-[10px] uppercase font-bold text-slate-400">Total Invoiced</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400">
+              {isAdmin ? 'Total Invoiced' : 'Your Invoiced Dues'}
+            </p>
             <p className="text-sm font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalExpected)}</p>
           </div>
           <div className="h-6 w-px bg-slate-200" />
           <div>
-            <p className="text-[10px] uppercase font-bold text-emerald-700">Collected (YTD)</p>
+            <p className="text-[10px] uppercase font-bold text-emerald-700">Paid (YTD)</p>
             <p className="text-sm font-bold text-emerald-700 font-mono">{FinancialCalculator.formatRWF(totalReceived)}</p>
           </div>
           <div className="h-6 w-px bg-slate-200" />
@@ -152,9 +173,9 @@ export const ContributionsView: React.FC = () => {
       <SearchFilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search partner, month (e.g. 'August 2026'), invoice..."
+        searchPlaceholder={isAdmin ? "Search partner, month (e.g. 'August 2026'), invoice..." : "Search month, reference, invoice..."}
         filters={[
-          {
+          ...(isAdmin ? [{
             label: 'Organization',
             value: orgFilter,
             onChange: setOrgFilter,
@@ -162,7 +183,7 @@ export const ContributionsView: React.FC = () => {
               { label: 'All Organizations', value: 'all' },
               ...organizations.map((o) => ({ label: o.name, value: o.id })),
             ],
-          },
+          }] : []),
           {
             label: 'Status',
             value: statusFilter,

@@ -49,6 +49,8 @@ import { storageService } from '../../services/storageService';
 import { AccountingService } from '../../services/accountingService';
 import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
+import { SecurityScope } from '../../utils/securityScope';
+import { Lock } from 'lucide-react';
 
 interface DashboardViewProps {
   onNavigate: (module: string) => void;
@@ -59,11 +61,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const [incomeExpenseChartType, setIncomeExpenseChartType] = useState<'line' | 'column'>('line');
 
   const state = storageService.getState();
+  const currentUser = state.currentUser;
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
+
   const fiscalYearNum = parseInt(selectedYear, 10);
   const pnl = AccountingService.getStatementOfComprehensiveIncome(state, fiscalYearNum);
   const sharedSummary = AccountingService.getSharedSpaceSummary(state);
   const trialBalance = AccountingService.getTrialBalance(state);
   const quality = AccountingService.getQualityReconciliation(state);
+
+  // Department-specific summary if non-admin
+  const myOrgSummary = userOrg 
+    ? sharedSummary.orgSummaries.find((o) => o.orgId === userOrg.id)
+    : null;
+
+  // Accessible collections under Data Isolation rules
+  const accessibleShared = SecurityScope.filterSharedExpenses(state.sharedExpenses, currentUser);
+  const accessibleContributions = SecurityScope.filterContributions(state.contributions, currentUser);
 
   // 1. Total Revenue (Official Approved/Posted)
   const totalRevenue = pnl.revenueTotal;
@@ -84,16 +99,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const apAccounts = state.accounts.filter((a) => a.type === 'Current Liabilities');
   const totalAP = apAccounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0);
 
-  const totalOutstandingContributions = state.contributions.reduce(
+  const totalOutstandingContributions = accessibleContributions.reduce(
     (sum, c) => sum + (c.outstandingBalance || 0),
     0
   );
 
   // Submissions Governance Breakdown
-  const pendingSubmissions = state.sharedExpenses.filter((e) => e.status === 'Submitted');
-  const approvedSharedCount = state.sharedExpenses.filter((e) => e.status === 'Posted' || e.status === 'Approved').length;
-  const rejectedSharedCount = state.sharedExpenses.filter((e) => e.status === 'Rejected').length;
-  const draftSharedCount = state.sharedExpenses.filter((e) => e.status === 'Draft').length;
+  const pendingSubmissions = accessibleShared.filter((e) => e.status === 'Submitted');
+  const approvedSharedCount = accessibleShared.filter((e) => e.status === 'Posted' || e.status === 'Approved').length;
+  const rejectedSharedCount = accessibleShared.filter((e) => e.status === 'Rejected').length;
+  const draftSharedCount = accessibleShared.filter((e) => e.status === 'Draft').length;
 
   // Monthly Revenue vs Expense trend data
   const monthlyTrendData = [
@@ -117,23 +132,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
   const orgPieData = state.organizations.map((org) => {
     const alloc = sharedSummary.orgSummaries.find((o) => o.orgId === org.id);
+    const isMyDept = !isAdmin && userOrg?.id === org.id;
     return {
-      name: org.name,
+      name: isAdmin ? org.name : (isMyDept ? `${org.name} (Your Dept)` : `${org.code} (Confidential)`),
       code: org.code,
       value: alloc ? alloc.annualAmount : 0,
       monthly: alloc ? alloc.monthlyAmount : 0,
       share: alloc ? alloc.percentageOfTotal : 0,
       color: orgPalette[org.id] || '#64748B',
+      isMyDept,
     };
   });
 
   const orgBarData = state.organizations.map((org) => {
     const alloc = sharedSummary.orgSummaries.find((o) => o.orgId === org.id);
+    const isMyDept = !isAdmin && userOrg?.id === org.id;
     return {
-      name: org.name.replace(' Rwanda', '').replace(' Operations', ''),
-      allocated: alloc ? alloc.annualAmount : 0,
-      paid: alloc ? alloc.totalPaidYTD : 0,
-      outstanding: alloc ? alloc.outstandingBalance : 0,
+      name: isAdmin ? org.name.replace(' Rwanda', '').replace(' Operations', '') : (isMyDept ? org.name.split(' ')[0] : `${org.code}`),
+      allocated: isAdmin || isMyDept ? (alloc ? alloc.annualAmount : 0) : 0,
+      paid: isAdmin || isMyDept ? (alloc ? alloc.totalPaidYTD : 0) : 0,
+      outstanding: isAdmin || isMyDept ? (alloc ? alloc.outstandingBalance : 0) : 0,
+      isMyDept,
     };
   });
 
@@ -185,19 +204,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-black text-slate-900 tracking-tight">
-              Shared Expenses Management System
+              {isAdmin ? 'Shared Expenses Management System' : `${userOrg?.name || 'Department'} Financial Portal`}
             </h1>
             <span className="px-2.5 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
               FY {selectedYear}
             </span>
-            {state.currentUser.role === 'ADMIN' && (
+            {isAdmin ? (
               <span className="px-2.5 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
-                Admin: Emmanuel Niyonzima
+                Super Admin: Emmanuel Niyonzima
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded-md flex items-center gap-1">
+                <Lock className="w-3 h-3 text-purple-600" />
+                Department Isolated: {userOrg?.name}
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Executive management dashboard, multi-organization shared expense allocation, and auditable financial ledgers.
+            {isAdmin 
+              ? 'Executive consolidated multi-department management dashboard, shared facility allocation matrix, and auditable accounting ledgers.'
+              : `Department workspace for ${userOrg?.name}. Submit shared expenses with receipts to Super Administrator Emmanuel Niyonzima for review and approval.`}
           </p>
         </div>
 
@@ -209,16 +235,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             icon={PlusCircle}
             onClick={() => onNavigate('shared-expenses')}
           >
-            Submit Shared Expense
+            Submit Department Expense
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={ArrowUpRight}
-            onClick={() => onNavigate('income')}
-          >
-            Post Income
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={ArrowUpRight}
+              onClick={() => onNavigate('income')}
+            >
+              Post Income
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -226,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             onClick={handleExportFullManagementExcel}
             className="border-emerald-600/50 text-emerald-800 hover:bg-emerald-50 font-bold"
           >
-            Export Management Excel (6 Sheets)
+            {isAdmin ? 'Export Management Excel' : 'Export Dept Excel'}
           </Button>
           <Button
             variant="outline"
@@ -234,12 +262,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             icon={Download}
             onClick={handleExportExecutivePDF}
           >
-            Executive PDF
+            {isAdmin ? 'Executive PDF Report' : 'Dept Statement PDF'}
           </Button>
         </div>
       </div>
 
-      {/* Pending Submissions Alert Banner for Administrator */}
+      {/* Pending Submissions Alert Banner */}
       {pendingSubmissions.length > 0 && (
         <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
           <div className="flex items-center gap-3">
@@ -248,10 +276,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             </div>
             <div>
               <p className="text-xs font-bold text-amber-950">
-                {pendingSubmissions.length} Department Shared Expense Submission(s) Awaiting Confirmation
+                {isAdmin 
+                  ? `${pendingSubmissions.length} Department Shared Expense Submission(s) Awaiting Emmanuel's Review`
+                  : `${pendingSubmissions.length} of your Department Submission(s) are Pending Review by Emmanuel Niyonzima`}
               </p>
               <p className="text-[11px] text-amber-800">
-                Departments have submitted shared space expenses with justification notes for Emmanuel's review and general ledger posting.
+                {isAdmin 
+                  ? "Resident departments have submitted shared space expenses with invoices for Emmanuel's review and general ledger posting."
+                  : "Your submitted expenses are currently in the review queue. Once approved by Emmanuel, they will be posted to the facility general ledger."}
               </p>
             </div>
           </div>
@@ -260,91 +292,170 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             onClick={() => onNavigate('shared-expenses')}
             className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
           >
-            Review & Confirm Submissions ({pendingSubmissions.length})
+            {isAdmin ? `Review & Approve (${pendingSubmissions.length})` : `View My Submissions (${pendingSubmissions.length})`}
           </button>
         </div>
       )}
 
-      {/* 2. Top Large KPI Section: Total Income | Total Expenses | Shared Expenses | Net Balance */}
+      {/* 2. Top KPI Section */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            1. Core Executive Financial Indicators (FY {selectedYear})
+            {isAdmin ? `1. Core Executive Financial Indicators (FY ${selectedYear})` : `1. Department Financial Indicators (${userOrg?.name})`}
           </h2>
           <span className="text-[11px] text-slate-400 font-medium">
-            Only approved & posted transactions included in official net totals
+            {isAdmin ? 'Consolidated facility accounting ledgers' : 'Restricted and isolated to your department'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* 1. Total Income */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Income / Revenue</span>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-                <ArrowUpRight className="w-5 h-5" />
+        {isAdmin ? (
+          /* ADMIN CONSOLIDATED VIEW */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Total Income */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Income / Revenue</span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(totalRevenue)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Facility fees & grants</span>
+                <span className="font-bold text-emerald-700">+14.2% vs Q2</span>
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-              {formatRWF(totalRevenue)}
-            </p>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-              <span className="text-slate-500">Facility fees & grants</span>
-              <span className="font-bold text-emerald-700">+14.2% vs Q2</span>
-            </div>
-          </div>
 
-          {/* 2. Total Expenses */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Expenses</span>
-              <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
-                <ArrowDownLeft className="w-5 h-5" />
+            {/* 2. Total Expenses */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Expenses</span>
+                <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
+                  <ArrowDownLeft className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(totalExpenses)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Direct & administrative</span>
+                <span className="font-bold text-rose-700">96.9% of budget</span>
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-              {formatRWF(totalExpenses)}
-            </p>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-              <span className="text-slate-500">Direct & administrative</span>
-              <span className="font-bold text-rose-700">96.9% of budget</span>
-            </div>
-          </div>
 
-          {/* 3. Shared Expenses */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Shared Facility Pool</span>
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
-                <Layers className="w-5 h-5" />
+            {/* 3. Shared Expenses */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Shared Facility Pool</span>
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                  <Layers className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(totalSharedExpenses)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">4-organization pool</span>
+                <span className="font-bold text-blue-700">100% Apportioned</span>
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-              {formatRWF(totalSharedExpenses)}
-            </p>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-              <span className="text-slate-500">4-organization pool</span>
-              <span className="font-bold text-blue-700">100% Apportioned</span>
-            </div>
-          </div>
 
-          {/* 4. Net Operating Balance */}
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Net Operating Balance</span>
-              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
-                <TrendingUp className="w-5 h-5" />
+            {/* 4. Net Operating Balance */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Net Operating Balance</span>
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
+                {formatRWF(netIncome)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Operating margin</span>
+                <span className="font-bold text-emerald-700">36.8% Surplus</span>
               </div>
             </div>
-            <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
-              {formatRWF(netIncome)}
-            </p>
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-              <span className="text-slate-500">Operating margin</span>
-              <span className="font-bold text-emerald-700">36.8% Surplus</span>
+          </div>
+        ) : (
+          /* DEPARTMENT ISOLATED VIEW */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Department Annual Allocation */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Annual Cost Share</span>
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                  <Building2 className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(myOrgSummary?.annualAmount || 0)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Cost allocation share</span>
+                <span className="font-bold text-blue-700">{myOrgSummary?.percentageOfTotal.toFixed(1)}% of facility</span>
+              </div>
+            </div>
+
+            {/* 2. Monthly Normalized Dues */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly Contribution Due</span>
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(myOrgSummary?.monthlyAmount || 0)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Billing cycle</span>
+                <span className="font-bold text-amber-700">Monthly normalized</span>
+              </div>
+            </div>
+
+            {/* 3. Contributions Remitted YTD */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Contributions Paid (YTD)</span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
+                {formatRWF(myOrgSummary?.totalPaidYTD || 0)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Remittance progress</span>
+                <span className="font-bold text-emerald-700">
+                  {(((myOrgSummary?.totalPaidYTD || 0) / (myOrgSummary?.annualAmount || 1)) * 100).toFixed(1)}% Settled
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Outstanding Payable to Facility */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Outstanding Balance Due</span>
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                  <Receipt className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+                {formatRWF(myOrgSummary?.outstandingBalance || 0)}
+              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Status</span>
+                <span className={`font-bold ${(myOrgSummary?.outstandingBalance || 0) > 0 ? 'text-amber-600' : 'text-emerald-700'}`}>
+                  {(myOrgSummary?.outstandingBalance || 0) > 0 ? 'Dues Pending' : 'Account Current'}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Secondary Supporting Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
@@ -380,7 +491,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <AlertCircle className="w-4 h-4 text-amber-600" />
           </div>
         </div>
-      </div>
 
       {/* 3. Income vs Expenses Chart Section with View Switcher */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">

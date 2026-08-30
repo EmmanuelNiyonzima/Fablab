@@ -24,7 +24,9 @@ import {
   Ban,
   RotateCcw,
   Paperclip,
-  Info
+  Info,
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { StatusBadge, Badge } from '../common/Badge';
@@ -32,6 +34,7 @@ import { Modal } from '../common/Modal';
 import { storageService } from '../../services/storageService';
 import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
+import { SecurityScope } from '../../utils/securityScope';
 import { SharedExpense, BillingFrequency, TransactionStatus } from '../../types/financial';
 
 interface SharedExpensesViewProps {
@@ -45,8 +48,9 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
 }) => {
   const state = storageService.getState();
   const currentUser = state.currentUser;
-  const isAdmin = currentUser.role === 'ADMIN';
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
   const sharedExpenses = state.sharedExpenses;
+  const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'my_submissions'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,13 +94,20 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
     state.organizations
   );
 
-  // Counts for tabs
-  const pendingSubmissions = sharedExpenses.filter((exp) => exp.status === 'Submitted');
-  const approvedExpenses = sharedExpenses.filter((exp) => exp.status === 'Posted' || exp.status === 'Approved');
-  const rejectedExpenses = sharedExpenses.filter((exp) => exp.status === 'Rejected');
+  // 1. DATA ISOLATION FILTERING
+  // Department users can ONLY see:
+  // - Submissions made by their department
+  // - Approved master facility shared expenses where they have a share (with other depts confidential)
+  // - Super Administrator sees all records
+  const accessibleExpenses = SecurityScope.filterSharedExpenses(sharedExpenses, currentUser);
+
+  // Counts for tabs based on accessible scope
+  const pendingSubmissions = accessibleExpenses.filter((exp) => exp.status === 'Submitted');
+  const approvedExpenses = accessibleExpenses.filter((exp) => exp.status === 'Posted' || exp.status === 'Approved');
+  const rejectedExpenses = accessibleExpenses.filter((exp) => exp.status === 'Rejected');
 
   // Filtered List
-  const filteredExpenses = sharedExpenses.filter((exp) => {
+  const filteredExpenses = accessibleExpenses.filter((exp) => {
     // Tab Filter
     if (activeTab === 'pending' && exp.status !== 'Submitted') return false;
     if (activeTab === 'approved' && exp.status !== 'Posted' && exp.status !== 'Approved') return false;
@@ -121,11 +132,19 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
     return matchesSearch && matchesCat && matchesFreq;
   });
 
-  const categories = Array.from(new Set(sharedExpenses.map((e) => e.category)));
+  const categories = Array.from(new Set(accessibleExpenses.map((e) => e.category)));
 
-  // Total summary calculations
-  const totalAnnual = sharedExpenses.reduce((sum, e) => sum + e.annualAmount, 0);
-  const totalMonthlyNormalized = sharedExpenses.reduce((sum, e) => sum + e.monthlyNormalizedAmount, 0);
+  // Total summary calculations based on accessible scope
+  const totalAnnual = accessibleExpenses.reduce((sum, e) => sum + e.annualAmount, 0);
+  const totalMonthlyNormalized = accessibleExpenses.reduce((sum, e) => sum + e.monthlyNormalizedAmount, 0);
+
+  // If department user, calculate their department specific share
+  const myDepartmentShare = userOrg 
+    ? accessibleExpenses.reduce((sum, e) => {
+        const alloc = e.allocations?.find((a) => a.orgId === userOrg.id);
+        return sum + (alloc ? alloc.amount : 0);
+      }, 0)
+    : 0;
 
   const handleSaveExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,9 +164,10 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
       return;
     }
 
-    const selectedOrg = state.organizations.find((o) => o.id === formSelectedOrgId);
+    // For non-admin, force submission under their own organization
+    const orgToUse = (!isAdmin && currentUser.organizationId) ? currentUser.organizationId : formSelectedOrgId;
+    const selectedOrg = state.organizations.find((o) => o.id === orgToUse);
 
-    // If Admin is submitting on behalf of a dept, it still creates a structured submission (or directly posts if chosen)
     const finalStatus: TransactionStatus = 'Submitted';
 
     storageService.addSharedExpense({
@@ -234,21 +254,34 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Shared Expenses Management</h2>
-            <Badge variant="emerald">Multi-Department</Badge>
+            {isAdmin ? (
+              <Badge variant="emerald">Superadmin Consolidated View</Badge>
+            ) : (
+              <Badge variant="purple">
+                <Lock className="w-3 h-3 mr-1" />
+                Department Isolated: {userOrg?.name || 'Department View'}
+              </Badge>
+            )}
             {pendingSubmissions.length > 0 && (
               <Badge variant="amber">
                 <Clock className="w-3 h-3 mr-1" />
-                {pendingSubmissions.length} Awaiting Emmanuel Approval
+                {pendingSubmissions.length} {isAdmin ? 'Awaiting Emmanuel Approval' : 'Submitted (Awaiting Emmanuel Review)'}
               </Badge>
             )}
           </div>
+          
           <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-            Cost sharing management across <strong>Fablab Rwanda (38%)</strong>, <strong>Klab (32%)</strong>, <strong>Fab Cafe (18%)</strong>, and <strong>250Startups (12%)</strong> at Telecom House 6th Floor.
+            {isAdmin ? (
+              <>Cost sharing governance across <strong>Fablab Rwanda (38%)</strong>, <strong>Klab (32%)</strong>, <strong>Fab Cafe (18%)</strong>, and <strong>250Startups (12%)</strong> at Telecom House 6th Floor.</>
+            ) : (
+              <>Department workspace for <strong>{userOrg?.name}</strong>. Access to other resident departments' financial records and private submissions is strictly isolated and restricted to Super Administrator <strong>Emmanuel Niyonzima</strong>.</>
+            )}
           </p>
+
           <div className="mt-2.5 flex items-center gap-2 text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 inline-flex">
             <Info className="w-3.5 h-3.5 text-[#0F4C81] shrink-0" />
             <span>
-              <strong>Workflow Protocol:</strong> Shared expenses are initiated by resident departments with receipts and submitted to <strong>Emmanuel Niyonzima</strong> for administrative approval before posting.
+              <strong>Workflow Protocol:</strong> Each department initiates and submits shared expenses with justification and receipts to <strong>Emmanuel Niyonzima</strong> for administrative review and approval.
             </span>
           </div>
         </div>
@@ -256,62 +289,66 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
         {/* Top Metric Cards + Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-3.5 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Total Annual Pool</p>
-              <p className="text-base font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalAnnual)}</p>
-            </div>
-            <div className="h-7 w-px bg-slate-200" />
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Monthly Normalized</p>
-              <p className="text-base font-bold text-emerald-700 font-mono">~{FinancialCalculator.formatRWF(totalMonthlyNormalized)}</p>
-            </div>
+            {isAdmin ? (
+              <>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Annual Pool</p>
+                  <p className="text-base font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalAnnual)}</p>
+                </div>
+                <div className="h-7 w-px bg-slate-200" />
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Monthly Normalized</p>
+                  <p className="text-base font-bold text-emerald-700 font-mono">~{FinancialCalculator.formatRWF(totalMonthlyNormalized)}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Your Dept Annual Share</p>
+                  <p className="text-base font-bold text-[#0F4C81] font-mono">{FinancialCalculator.formatRWF(myDepartmentShare)}</p>
+                </div>
+                <div className="h-7 w-px bg-slate-200" />
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Dept Submissions</p>
+                  <p className="text-base font-bold text-emerald-700 font-mono">{accessibleExpenses.length} Records</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Role-Adaptive Primary Buttons */}
           <div className="flex items-center gap-2">
-            {/* Download Full PDF Document */}
+            {/* Download PDF Document */}
             <button
               type="button"
               onClick={handleDownloadFullPDF}
               className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
-              title="Download Full Formatted PDF Report with Logos & Approval Sign-off"
+              title={isAdmin ? "Download Full Formatted PDF Report for Emmanuel Niyonzima" : "Download Department Shared Expense Statement PDF"}
             >
               <FileText className="w-4 h-4 text-emerald-400" />
-              <span>Full PDF Document</span>
+              <span>{isAdmin ? 'Full PDF Document' : 'Download PDF Statement'}</span>
             </button>
 
-            {/* Download Full Excel Workbook */}
+            {/* Download Excel Workbook */}
             <button
               type="button"
               onClick={handleDownloadFullExcel}
               className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#0F4C81] hover:bg-[#0A3962] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
-              title="Download Comprehensive Excel Workbook with formulas and department summaries"
+              title="Download Excel Workbook with automated formulas"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
-              <span>Excel Workbook (.xlsx)</span>
+              <span>{isAdmin ? 'Excel Workbook (.xlsx)' : 'Export Excel'}</span>
             </button>
 
             {/* Department Submit Expense Button */}
-            {!isAdmin ? (
-              <button
-                type="button"
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#009A44] hover:bg-[#007D37] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Submit Department Expense</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0 border border-slate-200"
-                title="Submit on behalf of a department (Simulation / Admin Entry)"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" />
-                <span>Submit for Dept</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#009A44] hover:bg-[#007D37] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Submit Department Expense</span>
+            </button>
           </div>
         </div>
       </div>
@@ -778,17 +815,25 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 <Building2 className="w-4 h-4 text-[#009A44]" />
                 <span className="font-bold text-[#007D37]">Submitting Department / Organization:</span>
               </div>
-              <select
-                value={formSelectedOrgId}
-                onChange={(e) => setFormSelectedOrgId(e.target.value)}
-                className="bg-white border border-[#A7E7BF] rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none"
-              >
-                {state.organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name} ({org.email})
-                  </option>
-                ))}
-              </select>
+              {!isAdmin && userOrg ? (
+                <div className="flex items-center gap-1.5 bg-white border border-[#A7E7BF] rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 shadow-2xs">
+                  <Lock className="w-3 h-3 text-[#009A44]" />
+                  <span>{userOrg.name} ({currentUser.email})</span>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-normal">Department Locked</span>
+                </div>
+              ) : (
+                <select
+                  value={formSelectedOrgId}
+                  onChange={(e) => setFormSelectedOrgId(e.target.value)}
+                  className="bg-white border border-[#A7E7BF] rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none"
+                >
+                  {state.organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} ({org.email})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1217,6 +1262,14 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             </div>
 
             <div className="border border-slate-200 rounded-xl overflow-hidden">
+              {!isAdmin && (
+                <div className="bg-amber-50/70 border-b border-amber-200/80 px-3.5 py-2 text-[11px] text-amber-900 flex items-center gap-1.5 font-medium">
+                  <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>
+                    <strong>Department Data Isolation Active:</strong> Individual allocation amounts for other resident organizations are confidential to Super Administrator <strong>Emmanuel Niyonzima</strong>.
+                  </span>
+                </div>
+              )}
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
                   <tr>
@@ -1227,18 +1280,49 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {viewExpense.allocations.map((alloc) => (
-                    <tr key={alloc.orgId} className="hover:bg-slate-50">
-                      <td className="py-2.5 px-4 font-bold text-slate-900">{alloc.orgName}</td>
-                      <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-700">{alloc.percentage}%</td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
-                        {FinancialCalculator.formatRWF(alloc.amount)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-700">
-                        {FinancialCalculator.formatRWF(alloc.monthlyShare)}
-                      </td>
-                    </tr>
-                  ))}
+                  {viewExpense.allocations.map((alloc) => {
+                    const isMyOrg = !isAdmin && userOrg?.id === alloc.orgId;
+                    const isOtherOrgMasked = !isAdmin && userOrg?.id !== alloc.orgId;
+
+                    return (
+                      <tr 
+                        key={alloc.orgId} 
+                        className={isMyOrg ? "bg-emerald-50/50 hover:bg-emerald-50/80 font-bold" : "hover:bg-slate-50"}
+                      >
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-900">{alloc.orgName}</span>
+                            {isMyOrg && (
+                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[9px] font-bold">
+                                Your Department
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4 text-center font-mono font-semibold text-slate-700">
+                          {alloc.percentage}%
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold">
+                          {isOtherOrgMasked ? (
+                            <span className="text-[10px] text-slate-400 font-normal italic flex items-center justify-end gap-1">
+                              <Lock className="w-2.5 h-2.5" /> Confidential
+                            </span>
+                          ) : (
+                            <span className="text-slate-800">{FinancialCalculator.formatRWF(alloc.amount)}</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold">
+                          {isOtherOrgMasked ? (
+                            <span className="text-[10px] text-slate-400 font-normal italic flex items-center justify-end gap-1">
+                              <Lock className="w-2.5 h-2.5" /> Restricted to Emmanuel
+                            </span>
+                          ) : (
+                            <span className="text-emerald-700">{FinancialCalculator.formatRWF(alloc.monthlyShare)}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

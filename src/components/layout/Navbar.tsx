@@ -41,29 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const state = storageService.getState();
   const currentUser = state.currentUser;
 
-  const roles: { role: UserRole; name: string; title: string }[] = [
-    { role: 'ADMIN', name: 'Emmanuel Niyonzima', title: 'Administrator & Lead Architect' },
-    { role: 'FINANCE_MANAGER', name: 'Marie Claire Uwera', title: 'Finance Manager (Approval & Posting)' },
-    { role: 'FINANCIAL_ANALYST', name: 'Patrick Mugisha', title: 'Financial Analyst (FP&A & Forecasts)' },
-    { role: 'ACCOUNTANT', name: 'Aline Umutoni', title: 'Senior Accountant (Journals & Ledger)' },
-    { role: 'VIEWER', name: 'Jean Claude Karangwa', title: 'Executive Board Member (Read-only)' },
-    { role: 'AUDITOR', name: 'Dr. David Habimana', title: 'External Auditor (Audit Logs & Controls)' },
-  ];
-
-  const handleRoleSelect = (r: typeof roles[0]) => {
-    const existing = state.users.find((u) => u.role === r.role);
-    if (existing) {
-      storageService.setCurrentUser(existing);
-    } else {
-      storageService.setCurrentUser({
-        id: `usr-${r.role.toLowerCase()}`,
-        name: r.name,
-        email: `${r.role.toLowerCase()}@fablab.rw`,
-        role: r.role,
-        department: 'Finance',
-        status: 'active',
-      });
-    }
+  const handleUserSelect = (targetUser: typeof state.users[0]) => {
+    storageService.setCurrentUser(targetUser);
     setShowUserMenu(false);
   };
 
@@ -364,28 +343,39 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {/* Tab 3: Quick Role Switcher for Delegation & Testing */}
                 {activeTab === 'delegation' && (
-                  <div className="py-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  <div className="py-1 max-h-56 overflow-y-auto custom-scrollbar">
                     <p className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400">
-                      Switch Role Context:
+                      Switch Active User / Department:
                     </p>
-                    {roles.map((r) => (
-                      <button
-                        key={r.role}
-                        type="button"
-                        onClick={() => handleRoleSelect(r)}
-                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-[#EBF3FA] flex items-start justify-between gap-2 transition-colors cursor-pointer ${
-                          currentUser.role === r.role ? 'bg-[#EBF3FA] font-bold text-[#0F4C81]' : 'text-slate-700'
-                        }`}
-                      >
-                        <div className="truncate">
-                          <p className="font-semibold truncate">{r.name}</p>
-                          <p className="text-[10px] text-slate-500 truncate">{r.title}</p>
-                        </div>
-                        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">
-                          {r.role}
-                        </span>
-                      </button>
-                    ))}
+                    {state.users.map((u) => {
+                      const isCurrent = currentUser.id === u.id || currentUser.email === u.email;
+                      const isSuper = u.role === 'ADMIN';
+                      return (
+                        <button
+                          key={u.id || u.email}
+                          type="button"
+                          onClick={() => handleUserSelect(u)}
+                          className={`w-full text-left px-3 py-2 text-xs hover:bg-[#EBF3FA] flex items-start justify-between gap-2 transition-colors cursor-pointer border-b border-slate-50 last:border-0 ${
+                            isCurrent ? 'bg-[#EBF3FA] font-bold text-[#0F4C81]' : 'text-slate-700'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold truncate text-slate-900 flex items-center gap-1.5">
+                              {u.name}
+                              {isCurrent && <CheckCircle2 className="w-3.5 h-3.5 text-[#0F4C81] inline shrink-0" />}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {u.organizationName || u.department || u.email}
+                            </p>
+                          </div>
+                          <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded shrink-0 font-bold ${
+                            isSuper ? 'bg-[#0F4C81] text-white' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {isSuper ? 'ADMIN' : (u.organizationName?.split(' ')[0] || 'DEPT')}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
