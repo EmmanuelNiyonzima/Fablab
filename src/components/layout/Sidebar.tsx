@@ -93,12 +93,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : (unreconciledShared > 0 ? `${unreconciledShared} Diff` : undefined),
           badgeColor: pendingSubmissionsCount > 0 ? 'amber' : 'red'
         },
-        { id: 'organizations', label: 'Organizations (4)', icon: Building2 },
+        { 
+          id: 'organizations', 
+          label: 'Organizations (4)', 
+          icon: Building2,
+          allowedRoles: ['ADMIN'],
+        },
         { 
           id: 'allocation-policies', 
           label: 'Allocation Policies', 
           icon: Sliders,
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'FINANCIAL_ANALYST'],
+          allowedRoles: ['ADMIN'],
         },
         { 
           id: 'contributions', 

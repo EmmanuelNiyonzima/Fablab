@@ -13,18 +13,25 @@ import {
   ShieldCheck,
   RotateCcw,
   Sparkles,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { DiscrepancyBanner } from '../common/DiscrepancyBanner';
 import { storageService } from '../../services/storageService';
 import { FinancialCalculator } from '../../services/calculationService';
+import { SecurityScope } from '../../utils/securityScope';
 import { AllocationPolicy, AllocationBasis } from '../../types/financial';
 
-export const AllocationPoliciesView: React.FC = () => {
+interface AllocationPoliciesViewProps {
+  onNavigate?: (module: string) => void;
+}
+
+export const AllocationPoliciesView: React.FC<AllocationPoliciesViewProps> = ({ onNavigate }) => {
   const state = storageService.getState();
-  const currentUser = storageService.getCurrentUser();
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const currentUser = state.currentUser;
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
   
   const policies = state.allocationPolicies;
   const organizations = state.organizations;
@@ -46,6 +53,55 @@ export const AllocationPoliciesView: React.FC = () => {
       setSuccessMessage(null);
     }
   }, [selectedPolicy.id]);
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 px-4 animate-in fade-in duration-200">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xs text-center space-y-6">
+          <div className="w-16 h-16 bg-purple-50 text-purple-700 rounded-2xl flex items-center justify-center mx-auto border border-purple-200 shadow-xs">
+            <Lock className="w-8 h-8 text-purple-600" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Administrator Privilege Required
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Cost Allocation Policies are Restricted
+            </h2>
+            <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
+              Floor space allocation weights, headcount apportionments, and multi-tenant billing policy configurations are managed <strong>exclusively by Super Administrator Emmanuel Niyonzima</strong>.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-left max-w-md mx-auto space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Your Current Context:</span>
+              <span className="font-bold text-slate-900">{currentUser?.name}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Department Context:</span>
+              <span className="font-bold text-purple-700">{userOrg?.name || 'Department User'}</span>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-center gap-3">
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate('dashboard')}
+                className="px-5 py-2.5 bg-[#0F4C81] hover:bg-[#0B3B66] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Return to Department Dashboard
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const currentTotalPercentage = Math.round(
     editingRules.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0) * 100

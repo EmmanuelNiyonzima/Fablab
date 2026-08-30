@@ -12,7 +12,10 @@ import {
   Wallet,
   CheckCircle,
   FileSpreadsheet,
-  ShieldAlert
+  ShieldAlert,
+  Lock,
+  ArrowLeft,
+  ShieldCheck
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -20,9 +23,14 @@ import { Modal } from '../common/Modal';
 import { storageService } from '../../services/storageService';
 import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
+import { SecurityScope } from '../../utils/securityScope';
 import { Organization } from '../../types/financial';
 
-export const OrganizationsView: React.FC = () => {
+interface OrganizationsViewProps {
+  onNavigate?: (module: string) => void;
+}
+
+export const OrganizationsView: React.FC<OrganizationsViewProps> = ({ onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -41,9 +49,75 @@ export const OrganizationsView: React.FC = () => {
   const [formNotes, setFormNotes] = useState('');
 
   const state = storageService.getState();
-  const currentUser = storageService.getCurrentUser();
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const currentUser = state.currentUser;
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
   const organizations = state.organizations;
+
+  // STRICT ACCESS CONTROL: Non-admins cannot view cross-department resident directory
+  if (!isAdmin) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 px-4 animate-in fade-in duration-200">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xs text-center space-y-6">
+          <div className="w-16 h-16 bg-purple-50 text-purple-700 rounded-2xl flex items-center justify-center mx-auto border border-purple-200 shadow-xs">
+            <Lock className="w-8 h-8 text-purple-600" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Administrator Privilege Required
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Resident Organizations Directory Is Restricted
+            </h2>
+            <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
+              In accordance with multi-tenant data governance policies, the complete directory of resident co-locators, floor space metrics, staff headcounts, and contact registries is accessible <strong>exclusively to Super Administrator Emmanuel Niyonzima</strong>.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-left max-w-md mx-auto space-y-2 text-xs">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Your Current Context:</span>
+              <span className="font-bold text-slate-900">{currentUser?.name}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Assigned Department:</span>
+              <span className="font-bold text-purple-700">{userOrg?.name || 'Department User'}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Security Role:</span>
+              <span className="font-mono bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-[11px] font-bold">
+                {currentUser?.role || 'STAFF'}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate('dashboard')}
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#0F4C81] hover:bg-[#0B3B66] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Return to My Department Dashboard
+              </button>
+            )}
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate('shared-expenses')}
+                className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Submit Department Expense
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const filteredOrgs = organizations.filter(
     (o) =>

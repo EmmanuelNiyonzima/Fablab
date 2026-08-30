@@ -158,9 +158,9 @@ export default function App() {
       case 'shared-expenses':
         return <SharedExpensesView />;
       case 'organizations':
-        return <OrganizationsView />;
+        return <OrganizationsView onNavigate={handleNavigate} />;
       case 'allocation-policies':
-        return <AllocationPoliciesView />;
+        return <AllocationPoliciesView onNavigate={handleNavigate} />;
       case 'contributions':
         return <ContributionsView />;
 

@@ -639,15 +639,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         {/* Left: Bar Chart - Expenses by Organization (7 cols) */}
         <div className="lg:col-span-7">
           <Card
-            title="3. Expenses & Contributions by Organization"
-            subtitle="Annual shared facility cost allocated vs contributions paid YTD"
+            title={isAdmin ? "3. Expenses & Contributions by Organization" : `3. Cost Allocation & Contributions (${userOrg?.name || 'Your Dept'})`}
+            subtitle={isAdmin ? "Annual shared facility cost allocated vs contributions paid YTD" : "Your department annual allocation vs remittances paid YTD"}
             actions={
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onNavigate('organizations')}
+                onClick={() => onNavigate(isAdmin ? 'organizations' : 'contributions')}
               >
-                View Details
+                {isAdmin ? 'View Organizations' : 'View My Dues'}
               </Button>
             }
           >
