@@ -36,6 +36,38 @@ export class SecurityScope {
   }
 
   /**
+   * Checks if user belongs to 250Startups
+   */
+  static is250Startups(user?: User | null): boolean {
+    if (!user) return false;
+    return (
+      user.organizationId === 'org-250startups' ||
+      user.organizationName?.toLowerCase().includes('250startups') ||
+      user.email?.toLowerCase().includes('250startups')
+    );
+  }
+
+  /**
+   * Checks if user has access to advanced executive accounting, budgets, forecasts, and financial statements:
+   * Accessible ONLY to Super Administrator (Emmanuel Niyonzima) and 250Startups.
+   * Hidden for all other departments (Fablab, kLab, Fab Cafe) to keep their UI distraction-free.
+   */
+  static canAccessAdvancedFinancials(user?: User | null): boolean {
+    if (this.isSuperAdmin(user)) return true;
+    if (this.is250Startups(user)) return true;
+    return false;
+  }
+
+  /**
+   * Checks if user can access the Audit Trail
+   */
+  static canAccessAuditTrail(user?: User | null): boolean {
+    if (this.isSuperAdmin(user)) return true;
+    if (this.is250Startups(user)) return true;
+    return false;
+  }
+
+  /**
    * Get user's active organization ID if department-restricted
    */
   static getUserOrgId(user?: User | null): string | undefined {

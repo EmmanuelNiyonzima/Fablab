@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, ArrowRight, Layers, FileSpreadsheet, Building2, BookOpen, DollarSign, Wallet } from 'lucide-react';
 import { storageService } from '../../services/storageService';
+import { SecurityScope } from '../../utils/securityScope';
 import { FinancialCalculator } from '../../services/calculationService';
 
 interface GlobalSearchModalProps {
@@ -16,6 +17,9 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const state = storageService.getState();
+  const currentUser = state.currentUser;
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const canAccessAdvanced = SecurityScope.canAccessAdvancedFinancials(currentUser);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,9 +36,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   const q = query.toLowerCase().trim();
 
+  const accessibleSharedExpenses = SecurityScope.filterSharedExpenses(state.sharedExpenses, currentUser);
+  const accessibleTransactions = SecurityScope.filterExpenseTransactions(state.expenseTransactions, currentUser);
+
   // Search categories
   const matchedSharedExpenses = q
-    ? state.sharedExpenses.filter(
+    ? accessibleSharedExpenses.filter(
         (e) =>
           e.description.toLowerCase().includes(q) ||
           e.category.toLowerCase().includes(q) ||
@@ -42,8 +49,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       )
     : [];
 
-  const matchedTransactions = q
-    ? state.expenseTransactions.filter(
+  const matchedTransactions = q && canAccessAdvanced
+    ? accessibleTransactions.filter(
         (e) =>
           e.description.toLowerCase().includes(q) ||
           e.vendor.toLowerCase().includes(q) ||
@@ -51,13 +58,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       )
     : [];
 
-  const matchedAccounts = q
+  const matchedAccounts = q && canAccessAdvanced
     ? state.accounts.filter(
         (a) => a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q)
       )
     : [];
 
-  const matchedOrgs = q
+  const matchedOrgs = q && isAdmin
     ? state.organizations.filter(
         (o) =>
           o.name.toLowerCase().includes(q) ||
@@ -66,7 +73,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       )
     : [];
 
-  const matchedJournals = q
+  const matchedJournals = q && canAccessAdvanced
     ? state.journalEntries.filter(
         (j) =>
           j.journalNumber.toLowerCase().includes(q) ||

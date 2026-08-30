@@ -63,6 +63,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const state = storageService.getState();
   const currentUser = state.currentUser;
   const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const is250 = SecurityScope.is250Startups(currentUser);
+  const canAccessAdvanced = SecurityScope.canAccessAdvancedFinancials(currentUser);
   const userOrg = SecurityScope.getUserOrg(currentUser, state.organizations);
 
   const fiscalYearNum = parseInt(selectedYear, 10);
@@ -813,13 +815,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             title="Shared Facility Budget vs Actual (YTD 2026)"
             subtitle="Variance tracking by major facility operational cost line"
             actions={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onNavigate('budget-vs-actual')}
-              >
-                Full Analysis
-              </Button>
+              canAccessAdvanced ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('budget-vs-actual')}
+                >
+                  Full Analysis
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('contributions')}
+                >
+                  View My Dues
+                </Button>
+              )
             }
           >
             <div className="overflow-x-auto">
@@ -861,13 +873,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             title="Financial Control & Compliance"
             subtitle="Double-entry audit reconciliation and statutory integrity"
             actions={
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onNavigate('control-center')}
-              >
-                Control Center
-              </Button>
+              canAccessAdvanced ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onNavigate('control-center')}
+                >
+                  Control Center
+                </Button>
+              ) : undefined
             }
           >
             <div className="space-y-3 text-xs">

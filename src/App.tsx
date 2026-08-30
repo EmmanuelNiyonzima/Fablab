@@ -48,6 +48,7 @@ import { UsersView } from './components/admin/UsersView';
 import { RolesPermissionsView } from './components/admin/RolesPermissionsView';
 import { ExcelImportView } from './components/admin/ExcelImportView';
 import { SettingsView } from './components/admin/SettingsView';
+import { SecurityScope } from './utils/securityScope';
 
 // Protected Route Guard Component
 interface ProtectedRouteProps {
@@ -147,12 +148,16 @@ export default function App() {
 
   // Render the active view
   const renderView = () => {
+    const currentUser = storageService.getCurrentUser();
+    const canAccessAdvanced = SecurityScope.canAccessAdvancedFinancials(currentUser);
+    const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+
     switch (currentModule) {
       // Core Overview
       case 'dashboard':
         return <DashboardView onNavigate={handleNavigate} />;
       case 'control-center':
-        return <ControlCenterView onNavigate={handleNavigate} />;
+        return canAccessAdvanced ? <ControlCenterView onNavigate={handleNavigate} /> : <DashboardView onNavigate={handleNavigate} />;
 
       // Shared Facility Space
       case 'shared-expenses':
@@ -164,51 +169,51 @@ export default function App() {
       case 'contributions':
         return <ContributionsView />;
 
-      // Financial Transactions
+      // Financial Transactions (Restricted to Admin & 250Startups)
       case 'expenses':
-        return <ExpensesView />;
+        return canAccessAdvanced ? <ExpensesView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'income':
-        return <IncomeView />;
+        return canAccessAdvanced ? <IncomeView /> : <DashboardView onNavigate={handleNavigate} />;
 
-      // Double-Entry Accounting
+      // Double-Entry Accounting (Restricted to Admin & 250Startups)
       case 'chart-of-accounts':
-        return <ChartOfAccountsView />;
+        return canAccessAdvanced ? <ChartOfAccountsView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'journal-entries':
-        return <JournalEntriesView />;
+        return canAccessAdvanced ? <JournalEntriesView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'general-ledger':
-        return <GeneralLedgerView />;
+        return canAccessAdvanced ? <GeneralLedgerView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'trial-balance':
-        return <TrialBalanceView />;
+        return canAccessAdvanced ? <TrialBalanceView /> : <DashboardView onNavigate={handleNavigate} />;
 
-      // Budgets & Forecasts
+      // Budgets & Forecasts (Restricted to Admin & 250Startups)
       case 'annual-budget':
-        return <AnnualBudgetView />;
+        return canAccessAdvanced ? <AnnualBudgetView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'budget-vs-actual':
-        return <BudgetVsActualView />;
+        return canAccessAdvanced ? <BudgetVsActualView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'forecast':
-        return <ForecastView />;
+        return canAccessAdvanced ? <ForecastView /> : <DashboardView onNavigate={handleNavigate} />;
 
-      // Financial Statements
+      // Financial Statements (Restricted to Admin & 250Startups)
       case 'income-statement':
-        return <IncomeStatementView />;
+        return canAccessAdvanced ? <IncomeStatementView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'cash-flow':
-        return <CashFlowView />;
+        return canAccessAdvanced ? <CashFlowView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'shared-report':
-        return <SharedExpenseReportView />;
+        return canAccessAdvanced ? <SharedExpenseReportView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'financial-summary':
-        return <FinancialSummaryView />;
+        return canAccessAdvanced ? <FinancialSummaryView /> : <DashboardView onNavigate={handleNavigate} />;
 
-      // System Administration
+      // System Administration (Audit Trail for Admin & 250Startups, rest for Super Admin only)
       case 'audit-log':
-        return <AuditTrailView />;
+        return SecurityScope.canAccessAuditTrail(currentUser) ? <AuditTrailView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'users':
-        return <UsersView />;
+        return isAdmin ? <UsersView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'roles-permissions':
-        return <RolesPermissionsView />;
+        return isAdmin ? <RolesPermissionsView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'excel-import':
-        return <ExcelImportView />;
+        return isAdmin ? <ExcelImportView /> : <DashboardView onNavigate={handleNavigate} />;
       case 'settings':
-        return <SettingsView />;
+        return isAdmin ? <SettingsView /> : <DashboardView onNavigate={handleNavigate} />;
 
       default:
         return <DashboardView onNavigate={handleNavigate} />;

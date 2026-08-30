@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 import { AccountingService } from '../../services/accountingService';
-import { UserRole } from '../../types/financial';
+import { UserRole, User } from '../../types/financial';
+import { SecurityScope } from '../../utils/securityScope';
 import { FabLabLogo } from '../common/FabLabLogo';
 
 interface SidebarProps {
@@ -44,10 +45,12 @@ interface NavItem {
   badge?: string | number;
   badgeColor?: 'green' | 'red' | 'amber' | 'blue';
   allowedRoles?: UserRole[];
+  customAccess?: (user?: User | null) => boolean;
 }
 
 interface NavSection {
   title: string;
+  customAccess?: (user?: User | null) => boolean;
   items: NavItem[];
 }
 
@@ -59,7 +62,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const state = storageService.getState();
   const quality = AccountingService.getQualityReconciliation(state);
-  const currentUserRole = state.currentUser?.role || 'VIEWER';
+  const currentUser = state.currentUser;
+  const currentUserRole = currentUser?.role || 'VIEWER';
+  const isAdmin = SecurityScope.isSuperAdmin(currentUser);
+  const is250 = SecurityScope.is250Startups(currentUser);
+  const canAccessAdvanced = SecurityScope.canAccessAdvancedFinancials(currentUser);
 
   const unapprovedCount = quality.unapprovedTransactions.length;
   const overdueCtbCount = quality.overdueContributions.length;
@@ -77,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           icon: ShieldAlert, 
           badge: quality.healthScore < 100 ? `${quality.healthScore}%` : '100%',
           badgeColor: quality.healthScore === 100 ? 'green' : 'red',
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'AUDITOR'],
+          customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
         },
       ],
     },
@@ -116,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'FINANCIAL TRANSACTIONS',
+      customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
       items: [
         { 
           id: 'expenses', 
@@ -123,25 +131,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           icon: ArrowDownLeft,
           badge: unapprovedCount > 0 ? `${unapprovedCount} Pending` : undefined,
           badgeColor: 'blue',
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'ACCOUNTANT', 'FINANCIAL_ANALYST', 'AUDITOR'],
         },
         { 
           id: 'income', 
           label: 'Income Register', 
           icon: ArrowUpRight,
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'ACCOUNTANT', 'FINANCIAL_ANALYST', 'AUDITOR'],
         },
       ],
     },
     {
       title: 'DOUBLE-ENTRY ACCOUNTING',
+      customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
       items: [
         { id: 'chart-of-accounts', label: 'Chart of Accounts', icon: BookOpen },
         { 
           id: 'journal-entries', 
           label: 'Journal Entries', 
           icon: Receipt,
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'ACCOUNTANT', 'AUDITOR'],
         },
         { id: 'general-ledger', label: 'General Ledger', icon: FileText },
         { 
@@ -155,6 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'BUDGETS & FORECASTS',
+      customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
       items: [
         { id: 'annual-budget', label: 'Annual Budget', icon: PieChart },
         { id: 'budget-vs-actual', label: 'Budget vs Actual', icon: BarChart3 },
@@ -163,6 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'FINANCIAL STATEMENTS',
+      customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
       items: [
         { id: 'income-statement', label: 'Statement of Income (P&L)', icon: DollarSign },
         { id: 'cash-flow', label: 'Cash Flow Statement', icon: Wallet },
@@ -172,12 +180,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'ADMINISTRATION',
+      customAccess: (u) => SecurityScope.canAccessAdvancedFinancials(u),
       items: [
         { 
           id: 'audit-log', 
           label: 'Audit Trail', 
           icon: History,
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER', 'AUDITOR'],
+          customAccess: (u) => SecurityScope.canAccessAuditTrail(u),
         },
         { 
           id: 'users', 
@@ -195,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id: 'excel-import', 
           label: 'Excel Data Import', 
           icon: UploadCloud,
-          allowedRoles: ['ADMIN', 'FINANCE_MANAGER'],
+          allowedRoles: ['ADMIN'],
         },
         { 
           id: 'settings', 
@@ -207,13 +216,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  // Filter items according to role permissions
+  // Filter sections and items according to role & department permissions
   const filteredSections = sections
+    .filter((sec) => !sec.customAccess || sec.customAccess(currentUser))
     .map((sec) => ({
       ...sec,
-      items: sec.items.filter(
-        (item) => !item.allowedRoles || item.allowedRoles.includes(currentUserRole)
-      ),
+      items: sec.items.filter((item) => {
+        if (item.customAccess && !item.customAccess(currentUser)) return false;
+        if (item.allowedRoles && !item.allowedRoles.includes(currentUserRole)) return false;
+        return true;
+      }),
     }))
     .filter((sec) => sec.items.length > 0);
 
