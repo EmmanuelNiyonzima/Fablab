@@ -324,96 +324,121 @@ export const AlignedPartnerLogos: React.FC<{
   size?: 'sm' | 'md' | 'lg';
   layout?: 'horizontal' | 'grid';
   className?: string;
-}> = ({ theme = 'light', size = 'md', layout = 'horizontal', className = '' }) => {
+  showLabels?: boolean;
+}> = ({ theme = 'light', size = 'md', layout = 'horizontal', className = '', showLabels = true }) => {
   const isDark = theme === 'dark';
+  const [klabError, setKlabError] = useState(false);
+  const [twoFiftyError, setTwoFiftyError] = useState(false);
 
   return (
     <div
       className={`flex ${
-        layout === 'grid' ? 'grid grid-cols-3' : 'flex-wrap items-center justify-center'
-      } gap-3 sm:gap-4 md:gap-6 ${className}`}
+        layout === 'grid' 
+          ? 'grid grid-cols-3' 
+          : 'flex-wrap items-center justify-center'
+      } gap-2.5 sm:gap-4 md:gap-6 ${className}`}
     >
       {/* 1. FabLab Rwanda & Fab Cafe */}
       <div
-        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
           isDark
-            ? 'bg-slate-900/70 border border-slate-700/70 hover:border-emerald-500/50'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-emerald-300'
+            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-emerald-500/60 hover:bg-slate-900'
+            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-emerald-400'
         }`}
       >
         <FabLabLogo size={size === 'sm' ? 'sm' : 'md'} variant="mark" theme={theme} />
-        <div className="text-left">
-          <div className="flex items-center gap-1">
-            <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Fablab Rwanda
+        {showLabels && (
+          <div className="text-left">
+            <div className="flex items-center gap-1">
+              <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} tracking-tight`}>
+                Fablab Rwanda
+              </span>
+            </div>
+            <span className="text-[10px] text-emerald-400 font-bold block leading-tight">
+              & Fab Cafe
             </span>
           </div>
-          <span className="text-[10px] text-emerald-600 font-medium block">
-            & Fab Cafe
-          </span>
-        </div>
+        )}
       </div>
 
       {/* Divider */}
       {layout === 'horizontal' && (
-        <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
+        <div className={`hidden sm:block w-px h-7 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
       )}
 
       {/* 2. kLab */}
       <div
-        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
           isDark
-            ? 'bg-slate-900/70 border border-slate-700/70 hover:border-sky-500/50'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-sky-300'
+            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-sky-500/60 hover:bg-slate-900'
+            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-sky-400'
         }`}
       >
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/80 shrink-0 shadow-2xs">
-          <img
-            src={ORG_LOGO_URLS.kLab}
-            alt="kLab Logo"
-            referrerPolicy="no-referrer"
-            className="w-7 h-7 object-contain rounded"
-          />
+        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/90 shrink-0 shadow-2xs overflow-hidden">
+          {!klabError ? (
+            <img
+              src={ORG_LOGO_URLS.kLab}
+              alt="kLab Logo"
+              referrerPolicy="no-referrer"
+              onError={() => setKlabError(true)}
+              className="w-7 h-7 object-contain rounded"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white font-black text-[10px]">
+              KLB
+            </div>
+          )}
         </div>
-        <div className="text-left">
-          <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'} block`}>
-            kLab
-          </span>
-          <span className="text-[10px] text-sky-600 font-medium block">
-            Innovation Space
-          </span>
-        </div>
+        {showLabels && (
+          <div className="text-left">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight`}>
+              kLab
+            </span>
+            <span className="text-[10px] text-sky-400 font-bold block leading-tight">
+              Innovation Space
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Divider */}
       {layout === 'horizontal' && (
-        <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
+        <div className={`hidden sm:block w-px h-7 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
       )}
 
       {/* 3. 250Startups */}
       <div
-        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
           isDark
-            ? 'bg-slate-900/70 border border-slate-700/70 hover:border-purple-500/50'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-purple-300'
+            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-purple-500/60 hover:bg-slate-900'
+            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-purple-400'
         }`}
       >
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/80 shrink-0 shadow-2xs">
-          <img
-            src={ORG_LOGO_URLS.twoFiftyStartups}
-            alt="250Startups Logo"
-            referrerPolicy="no-referrer"
-            className="w-7 h-7 object-contain rounded"
-          />
+        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/90 shrink-0 shadow-2xs overflow-hidden">
+          {!twoFiftyError ? (
+            <img
+              src={ORG_LOGO_URLS.twoFiftyStartups}
+              alt="250Startups Logo"
+              referrerPolicy="no-referrer"
+              onError={() => setTwoFiftyError(true)}
+              className="w-7 h-7 object-contain rounded"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-black text-[10px]">
+              250S
+            </div>
+          )}
         </div>
-        <div className="text-left">
-          <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'} block`}>
-            250Startups
-          </span>
-          <span className="text-[10px] text-purple-600 font-medium block">
-            Incubator Hub
-          </span>
-        </div>
+        {showLabels && (
+          <div className="text-left">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight`}>
+              250Startups
+            </span>
+            <span className="text-[10px] text-purple-400 font-bold block leading-tight">
+              Incubator Hub
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

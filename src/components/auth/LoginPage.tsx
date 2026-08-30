@@ -139,14 +139,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="absolute top-1/3 right-10 w-[380px] h-[380px] bg-[#009A44]/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Top Header with Aligned Partner Logos */}
-      <header className="px-4 sm:px-6 py-3.5 border-b border-slate-800/80 bg-[#0B192C]/95 backdrop-blur-md relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-            Resident Hubs:
-          </span>
-          <AlignedPartnerLogos theme="dark" size="sm" layout="horizontal" />
+      {/* Top Header with Centered Partner Logos */}
+      <header className="px-4 sm:px-8 py-3 sm:py-4 border-b border-slate-800/80 bg-[#0B192C]/95 backdrop-blur-md relative z-10 flex items-center justify-center shadow-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 w-full max-w-4xl">
+          <AlignedPartnerLogos theme="dark" size="md" layout="horizontal" />
         </div>
       </header>
 
@@ -197,19 +193,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="w-full lg:col-span-6 flex justify-center">
             <div className="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-5 animate-in fade-in zoom-in-95 duration-200">
               
-              {/* Aligned Logos Strip on Top of Card */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5">
-                <div className="flex items-center justify-between mb-1.5 px-1">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Participating Organizations
-                  </span>
-                  <span className="text-[9px] font-bold bg-[#EBF3FA] text-[#0F4C81] px-1.5 py-0.5 rounded">
-                    Telecom House
-                  </span>
-                </div>
-                <AlignedPartnerLogos theme="light" size="sm" layout="horizontal" />
-              </div>
-
               {/* Dynamic Org Banner or Welcome Header */}
               {(() => {
                 const activeMeta = getOrgMeta(email);
@@ -217,9 +200,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 
                 if (isDeptAccount) {
                   return (
-                    <div className="p-3 rounded-xl border bg-slate-50/80 flex items-center justify-between transition-all animate-in fade-in duration-150">
+                    <div className="p-3.5 rounded-xl border bg-slate-50 flex items-center justify-between transition-all animate-in fade-in duration-150 border-slate-200">
                       <OrgLogo orgName={email} size="sm" variant="horizontal" showSubtitle={true} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono">
                         Active Portal
                       </span>
                     </div>
@@ -227,10 +210,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 }
 
                 return (
-                  <div className="text-center space-y-1 pt-1">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Welcome back</h2>
-                    <p className="text-xs text-slate-500">
-                      Sign in to your organization portal to manage shared facility expenses.
+                  <div className="text-center space-y-1.5 pt-1">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+                      Sign in to your organization account to access facility expenses and financial records.
                     </p>
                   </div>
                 );
