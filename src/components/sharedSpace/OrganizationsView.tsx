@@ -15,7 +15,9 @@ import {
   ShieldAlert,
   Lock,
   ArrowLeft,
-  ShieldCheck
+  ShieldCheck,
+  FileDown,
+  FileText
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -399,6 +401,19 @@ export const OrganizationsView: React.FC<OrganizationsViewProps> = ({ onNavigate
                   <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>{org.phone}</span>
                 </div>
+              </div>
+
+              {/* Action: Download Department Statement PDF with Org Logo */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => ExportService.exportDepartmentStatementPDF(state, org.id, { fiscalYear: 2026, generatedBy: currentUser.name })}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                  title={`Download Official ${org.name} PDF Statement with ${org.name} Logo`}
+                >
+                  <FileDown className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Download {org.code} Statement (PDF)</span>
+                </button>
               </div>
             </div>
           );

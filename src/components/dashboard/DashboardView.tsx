@@ -191,6 +191,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
     ExportService.exportToPDF('Executive Financial Management Summary Report', 'SEMS_Executive_Financial_Report', headers, rows, {
       generatedBy: state.currentUser.name,
+      orgName: userOrg?.name,
+      orgCode: userOrg?.code,
+      orgId: userOrg?.id,
       summaryStats: [
         { label: 'Revenue', value: formatRWF(totalRevenue) },
         { label: 'Expenses', value: formatRWF(totalExpenses) },

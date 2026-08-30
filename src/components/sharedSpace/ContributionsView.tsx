@@ -12,7 +12,8 @@ import {
   FileText,
   DollarSign,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  FileDown
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -124,6 +125,21 @@ export const ContributionsView: React.FC = () => {
     ]);
   };
 
+  const handleDownloadStatementPDF = () => {
+    const targetOrgId = (!isAdmin && currentUser.organizationId)
+      ? currentUser.organizationId
+      : (orgFilter !== 'all' ? orgFilter : 'org-klab');
+
+    ExportService.exportDepartmentStatementPDF(state, targetOrgId, {
+      fiscalYear: 2026,
+      generatedBy: currentUser.name,
+    });
+  };
+
+  const handleDownloadInvoicePDF = (contributionId: string) => {
+    ExportService.exportContributionInvoicePDF(state, contributionId);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header Banner */}
@@ -149,22 +165,34 @@ export const ContributionsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-4 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
-          <div>
-            <p className="text-[10px] uppercase font-bold text-slate-400">
-              {isAdmin ? 'Total Invoiced' : 'Your Invoiced Dues'}
-            </p>
-            <p className="text-sm font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalExpected)}</p>
-          </div>
-          <div className="h-6 w-px bg-slate-200" />
-          <div>
-            <p className="text-[10px] uppercase font-bold text-emerald-700">Paid (YTD)</p>
-            <p className="text-sm font-bold text-emerald-700 font-mono">{FinancialCalculator.formatRWF(totalReceived)}</p>
-          </div>
-          <div className="h-6 w-px bg-slate-200" />
-          <div>
-            <p className="text-[10px] uppercase font-bold text-rose-700">Outstanding</p>
-            <p className="text-sm font-bold text-rose-700 font-mono">{FinancialCalculator.formatRWF(totalOutstanding)}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadStatementPDF}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            title="Download Official Department Statement PDF with Authentic Logo"
+          >
+            <FileDown className="w-4 h-4 text-slate-600" />
+            <span>Download Statement PDF</span>
+          </button>
+
+          <div className="flex items-center gap-4 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">
+                {isAdmin ? 'Total Invoiced' : 'Your Invoiced Dues'}
+              </p>
+              <p className="text-sm font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalExpected)}</p>
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <div>
+              <p className="text-[10px] uppercase font-bold text-emerald-700">Paid (YTD)</p>
+              <p className="text-sm font-bold text-emerald-700 font-mono">{FinancialCalculator.formatRWF(totalReceived)}</p>
+            </div>
+            <div className="h-6 w-px bg-slate-200" />
+            <div>
+              <p className="text-[10px] uppercase font-bold text-rose-700">Outstanding</p>
+              <p className="text-sm font-bold text-rose-700 font-mono">{FinancialCalculator.formatRWF(totalOutstanding)}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -235,20 +263,32 @@ export const ContributionsView: React.FC = () => {
                     <StatusBadge status={c.status} />
                   </td>
                   <td className="py-3 px-4 text-center">
-                    {c.outstandingBalance > 0 ? (
+                    <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleOpenPayment(c)}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors"
+                        onClick={() => handleDownloadInvoicePDF(c.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                        title="Download Official Contribution Invoice PDF with Department Logo"
                       >
-                        <Wallet className="w-3.5 h-3.5" />
-                        <span>Record Payment</span>
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Invoice PDF</span>
                       </button>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                        <CheckCircle className="w-3.5 h-3.5" /> Settled
-                      </span>
-                    )}
+
+                      {c.outstandingBalance > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPayment(c)}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>Record Payment</span>
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                          <CheckCircle className="w-3.5 h-3.5" /> Settled
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

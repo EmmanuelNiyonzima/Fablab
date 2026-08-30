@@ -12,6 +12,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
+import { OrgLogo } from '../common/OrgLogo';
 import { storageService } from '../../services/storageService';
 import { AccountingService } from '../../services/accountingService';
 import { FinancialCalculator } from '../../services/calculationService';
@@ -19,6 +20,10 @@ import { ExportService } from '../../services/exportService';
 
 export const FinancialSummaryView: React.FC = () => {
   const state = storageService.getState();
+  const currentUser = state.currentUser;
+  const isAdmin = currentUser.role === 'ADMIN';
+  const userOrg = state.organizations.find((o) => o.id === currentUser.organizationId);
+
   const pnl = AccountingService.getStatementOfComprehensiveIncome(state, 2026);
   const shared = AccountingService.getSharedSpaceSummary(state);
   const tb = AccountingService.getTrialBalance(state);
@@ -31,6 +36,11 @@ export const FinancialSummaryView: React.FC = () => {
   const handleExportSummaryExcel = () => {
     ExportService.exportFullManagementWorkbook(state, { fiscalYear: 2026, generatedBy: state.currentUser.name });
   };
+
+  const orgDisplayName = isAdmin ? 'Shared Expenses Management System' : (userOrg?.name || 'Department Financial Brief');
+  const orgSubText = isAdmin 
+    ? 'Telecom House Shared Facility (6th Floor) | Boulevard de l’Umuganda, Kigali, Rwanda'
+    : `Telecom House Shared Facility (6th Floor) | ${userOrg?.name} Financial Operations & Apportionment`;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -70,16 +80,14 @@ export const FinancialSummaryView: React.FC = () => {
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs p-8 max-w-4xl mx-auto space-y-8 print:border-none print:shadow-none print:p-0">
         {/* Document Header */}
         <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white text-sm">
-                FL
-              </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">FabLab Rwanda</h1>
+          <div className="flex items-center gap-3.5">
+            <OrgLogo user={currentUser} size="lg" variant="badge" theme="light" />
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{orgDisplayName}</h1>
+              <p className="text-xs text-slate-500 mt-1">
+                {orgSubText}
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Kigali Heights Building, 4th Floor | Kigali, Rwanda
-            </p>
           </div>
 
           <div className="text-left sm:text-right">

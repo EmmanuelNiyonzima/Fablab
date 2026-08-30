@@ -6,7 +6,8 @@ import {
   Download, 
   PieChart, 
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  FileDown
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -81,6 +82,45 @@ export const SharedExpenseReportView: React.FC = () => {
     );
   };
 
+  const handleExportPDF = () => {
+    const userOrg = state.organizations.find((o) => o.id === state.currentUser.organizationId);
+    const headers = ['Category', 'Freq', 'Total Monthly', 'FabLab (38%)', 'kLab (32%)', 'Fab Cafe (18%)', '250Startups (12%)'];
+    const rows = sharedExpenses.map((e) => {
+      const fablab = e.allocations.find((a) => a.orgId === 'org-fablab')?.monthlyShare || 0;
+      const klab = e.allocations.find((a) => a.orgId === 'org-klab')?.monthlyShare || 0;
+      const fabcafe = e.allocations.find((a) => a.orgId === 'org-fabcafe')?.monthlyShare || 0;
+      const s250 = e.allocations.find((a) => a.orgId === 'org-250startups')?.monthlyShare || 0;
+
+      return [
+        e.category,
+        e.billingFrequency,
+        FinancialCalculator.formatRWF(e.monthlyNormalizedAmount, false),
+        FinancialCalculator.formatRWF(fablab, false),
+        FinancialCalculator.formatRWF(klab, false),
+        FinancialCalculator.formatRWF(fabcafe, false),
+        FinancialCalculator.formatRWF(s250, false),
+      ];
+    });
+
+    ExportService.exportToPDF(
+      'Shared Facility Cost Apportionment Schedule',
+      'SEMS_Cost_Apportionment_Schedule',
+      headers,
+      rows,
+      {
+        orientation: 'landscape',
+        generatedBy: state.currentUser.name,
+        orgName: userOrg?.name,
+        orgCode: userOrg?.code,
+        orgId: userOrg?.id,
+        summaryStats: [
+          { label: 'Annual Shared Pool', value: FinancialCalculator.formatRWF(sharedSummary.totalAnnualSharedBudget) },
+          { label: 'Monthly Recovery', value: FinancialCalculator.formatRWF(sharedSummary.totalMonthlyNormalizedBudget) },
+        ],
+      }
+    );
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header Banner */}
@@ -95,7 +135,16 @@ export const SharedExpenseReportView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportPDF}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            title="Download Official Apportionment PDF Report with Organization Logo"
+          >
+            <FileDown className="w-4 h-4 text-slate-600" />
+            <span>Download PDF Schedule</span>
+          </button>
           <button
             type="button"
             onClick={handleExportExcel}

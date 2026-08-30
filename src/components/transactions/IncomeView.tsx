@@ -15,7 +15,8 @@ import {
   TrendingUp,
   Filter,
   CreditCard,
-  Layers
+  Layers,
+  FileDown
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { Badge, StatusBadge } from '../common/Badge';
@@ -156,6 +157,42 @@ export const IncomeView: React.FC<IncomeViewProps> = ({ onNavigate }) => {
     ExportService.exportToExcel('Revenue & Income Register', 'SEMS_Revenue_Register', headers, rows, [
       { label: 'Total Filtered Revenue', value: FinancialCalculator.formatRWF(totalIncomeAmount) },
     ]);
+  };
+
+  const handleDownloadReceiptPDF = (receipt: IncomeTransaction) => {
+    const org = state.organizations.find((o) => o.id === receipt.organizationId);
+    const headers = ['Receipt Item / Particulars', 'Details'];
+    const rows = [
+      ['Receipt Number', receipt.incomeNumber],
+      ['Transaction Date', receipt.date],
+      ['Client / Customer', receipt.customer],
+      ['Payment Method', receipt.paymentMethod],
+      ['Revenue Stream', receipt.accountName],
+      ['Project / Activity', receipt.project || 'General Operations'],
+      ['Gross Amount', FinancialCalculator.formatRWF(receipt.amount)],
+      ['Tax (VAT)', FinancialCalculator.formatRWF(receipt.tax)],
+      ['Total Inflow Received', FinancialCalculator.formatRWF(receipt.totalWithTax)],
+      ['Narration', receipt.description],
+      ['Status', receipt.status],
+      ['Cashier / Officer', receipt.createdBy],
+    ];
+
+    ExportService.exportToPDF(
+      `Official Revenue Receipt - ${receipt.incomeNumber}`,
+      `Receipt_${receipt.incomeNumber}`,
+      headers,
+      rows,
+      {
+        generatedBy: state.currentUser.name,
+        orgName: org?.name || userOrg?.name,
+        orgCode: org?.code || userOrg?.code,
+        orgId: org?.id || userOrg?.id,
+        summaryStats: [
+          { label: 'Amount Received', value: FinancialCalculator.formatRWF(receipt.totalWithTax) },
+          { label: 'Payment Method', value: receipt.paymentMethod },
+        ],
+      }
+    );
   };
 
   return (
@@ -482,7 +519,17 @@ export const IncomeView: React.FC<IncomeViewProps> = ({ onNavigate }) => {
           subtitle={`Recorded on ${selectedReceipt.date} by ${selectedReceipt.createdBy}`}
           maxWidth="md"
           footer={
-            <div className="flex items-center justify-end gap-2 w-full">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <button
+                type="button"
+                onClick={() => handleDownloadReceiptPDF(selectedReceipt)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                title="Download Official Revenue Receipt PDF with Organization Logo"
+              >
+                <FileDown className="w-3.5 h-3.5 text-slate-600" />
+                <span>Download PDF Receipt</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedReceipt(null)}
