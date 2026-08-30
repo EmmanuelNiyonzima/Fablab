@@ -173,7 +173,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-[#009A44]" />
-                    Resident Co-Locators & Partners
+                    Resident Departments & Co-Locators
                   </span>
                   <span className="text-[10px] text-emerald-400 font-mono">4 Entities</span>
                 </div>
@@ -181,9 +181,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="space-y-2">
                   <AlignedPartnerLogos theme="dark" size="md" layout="grid" />
                 </div>
-                <p className="text-[10px] text-slate-400 text-center italic">
-                  Note: Fablab Rwanda and Fab Cafe operate collaboratively under the primary FabLab design brand.
-                </p>
               </div>
 
             </div>
@@ -348,7 +345,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Direct Department Portals
                   </p>
-                  <span className="text-[10px] text-slate-400 font-mono">Password: admin123</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Click to switch</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {[

@@ -330,32 +330,32 @@ export const AlignedPartnerLogos: React.FC<{
   const [klabError, setKlabError] = useState(false);
   const [twoFiftyError, setTwoFiftyError] = useState(false);
 
+  const cardBase = isDark
+    ? 'bg-slate-900/90 border border-slate-700/80 shadow-md hover:bg-slate-900'
+    : 'bg-white border border-slate-200/90 shadow-2xs';
+
   return (
     <div
       className={`flex ${
         layout === 'grid' 
-          ? 'grid grid-cols-3' 
+          ? 'grid grid-cols-2 sm:grid-cols-4' 
           : 'flex-wrap items-center justify-center'
-      } gap-2.5 sm:gap-4 md:gap-6 ${className}`}
+      } gap-2 sm:gap-3 md:gap-3.5 ${className}`}
     >
-      {/* 1. FabLab Rwanda & Fab Cafe */}
+      {/* 1. FabLab Rwanda Department */}
       <div
-        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
-          isDark
-            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-emerald-500/60 hover:bg-slate-900'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-emerald-400'
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 ${cardBase} ${
+          isDark ? 'hover:border-emerald-500/60' : 'hover:border-emerald-400'
         }`}
       >
         <FabLabLogo size={size === 'sm' ? 'sm' : 'md'} variant="mark" theme={theme} />
         {showLabels && (
-          <div className="text-left">
-            <div className="flex items-center gap-1">
-              <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} tracking-tight`}>
-                Fablab Rwanda
-              </span>
-            </div>
-            <span className="text-[10px] text-emerald-400 font-bold block leading-tight">
-              & Fab Cafe
+          <div className="text-left min-w-0">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight truncate`}>
+              Fablab Rwanda
+            </span>
+            <span className="text-[10px] text-emerald-400 font-bold block leading-tight truncate">
+              Fabrication Lab
             </span>
           </div>
         )}
@@ -363,15 +363,37 @@ export const AlignedPartnerLogos: React.FC<{
 
       {/* Divider */}
       {layout === 'horizontal' && (
-        <div className={`hidden sm:block w-px h-7 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
+        <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-slate-700/70' : 'bg-slate-200'}`} />
       )}
 
-      {/* 2. kLab */}
+      {/* 2. Fab Cafe Department (Uses Same FabLab Logo) */}
       <div
-        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
-          isDark
-            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-sky-500/60 hover:bg-slate-900'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-sky-400'
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 ${cardBase} ${
+          isDark ? 'hover:border-amber-500/60' : 'hover:border-amber-400'
+        }`}
+      >
+        <FabLabLogo size={size === 'sm' ? 'sm' : 'md'} variant="mark" theme={theme} />
+        {showLabels && (
+          <div className="text-left min-w-0">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight truncate`}>
+              Fab Cafe
+            </span>
+            <span className="text-[10px] text-amber-400 font-bold block leading-tight truncate">
+              Collaborative Cafe
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      {layout === 'horizontal' && (
+        <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-slate-700/70' : 'bg-slate-200'}`} />
+      )}
+
+      {/* 3. kLab Department */}
+      <div
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 ${cardBase} ${
+          isDark ? 'hover:border-sky-500/60' : 'hover:border-sky-400'
         }`}
       >
         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/90 shrink-0 shadow-2xs overflow-hidden">
@@ -390,11 +412,11 @@ export const AlignedPartnerLogos: React.FC<{
           )}
         </div>
         {showLabels && (
-          <div className="text-left">
-            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight`}>
+          <div className="text-left min-w-0">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight truncate`}>
               kLab
             </span>
-            <span className="text-[10px] text-sky-400 font-bold block leading-tight">
+            <span className="text-[10px] text-sky-400 font-bold block leading-tight truncate">
               Innovation Space
             </span>
           </div>
@@ -403,15 +425,13 @@ export const AlignedPartnerLogos: React.FC<{
 
       {/* Divider */}
       {layout === 'horizontal' && (
-        <div className={`hidden sm:block w-px h-7 ${isDark ? 'bg-slate-700/80' : 'bg-slate-200'}`} />
+        <div className={`hidden sm:block w-px h-6 ${isDark ? 'bg-slate-700/70' : 'bg-slate-200'}`} />
       )}
 
-      {/* 3. 250Startups */}
+      {/* 4. 250Startups Department */}
       <div
-        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all duration-200 ${
-          isDark
-            ? 'bg-slate-900/85 border border-slate-700/80 shadow-md hover:border-purple-500/60 hover:bg-slate-900'
-            : 'bg-white border border-slate-200/90 shadow-2xs hover:border-purple-400'
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 ${cardBase} ${
+          isDark ? 'hover:border-purple-500/60' : 'hover:border-purple-400'
         }`}
       >
         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 border border-slate-200/90 shrink-0 shadow-2xs overflow-hidden">
@@ -430,11 +450,11 @@ export const AlignedPartnerLogos: React.FC<{
           )}
         </div>
         {showLabels && (
-          <div className="text-left">
-            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight`}>
+          <div className="text-left min-w-0">
+            <span className={`text-xs font-extrabold ${isDark ? 'text-white' : 'text-slate-900'} block tracking-tight truncate`}>
               250Startups
             </span>
-            <span className="text-[10px] text-purple-400 font-bold block leading-tight">
+            <span className="text-[10px] text-purple-400 font-bold block leading-tight truncate">
               Incubator Hub
             </span>
           </div>
