@@ -17,10 +17,12 @@ import {
   Coffee,
   Rocket,
   Cpu,
-  Share2
+  Share2,
+  Sparkles
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { FabLabLogo } from '../common/FabLabLogo';
+import { OrgLogo, AlignedPartnerLogos, getOrgMeta } from '../common/OrgLogo';
 import { Button } from '../common/Button';
 
 interface LoginPageProps {
@@ -137,9 +139,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="absolute top-1/3 right-10 w-[380px] h-[380px] bg-[#009A44]/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Top Header */}
-      <header className="px-6 py-4 border-b border-slate-800/80 bg-[#0B192C]/90 backdrop-blur-md relative z-10 flex items-center justify-between">
+      {/* Top Header with Aligned Partner Logos */}
+      <header className="px-4 sm:px-6 py-3.5 border-b border-slate-800/80 bg-[#0B192C]/95 backdrop-blur-md relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
         <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+            Resident Hubs:
+          </span>
+          <AlignedPartnerLogos theme="dark" size="sm" layout="horizontal" />
+        </div>
       </header>
 
       {/* Main Split Layout */}
@@ -148,68 +156,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           
           {/* LEFT: Shared Expenses Management System & Partner Organizations */}
           <div className="hidden lg:flex lg:col-span-6 flex-col justify-center space-y-5 text-slate-200">
-            <div className="p-7 rounded-3xl bg-[#0B192C]/75 backdrop-blur-md border border-slate-700/60 shadow-2xl space-y-5 max-w-lg">
+            <div className="p-7 rounded-3xl bg-[#0B192C]/80 backdrop-blur-md border border-slate-700/60 shadow-2xl space-y-5 max-w-lg">
               
               {/* Header Title Section */}
               <div className="space-y-2.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#009A44]/20 border border-[#009A44]/40 text-[#009A44] text-xs font-semibold">
                   <span className="w-2 h-2 rounded-full bg-[#009A44] animate-ping" />
-                  <span>Telecom House Shared Facility</span>
+                  <span>Telecom House 6th Floor</span>
                 </div>
-                <h1 className="text-2xl xl:text-3xl font-extrabold text-[#009A44] tracking-tight leading-tight drop-shadow-md">
-                  Shared Expenses Management System
+                <h1 className="text-2xl xl:text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                  Shared Expenses <span className="text-[#009A44]">Management System</span>
                 </h1>
                 <p className="text-xs text-slate-300 leading-relaxed drop-shadow-xs">
                   Powering unified facility cost allocation, expense tracking, and transparent financial reconciliation for co-located partner organizations.
                 </p>
               </div>
 
-              {/* Partner Organizations Section */}
-              <div className="space-y-2.5 pt-3 border-t border-slate-700/60">
+              {/* Partner Organizations Section with Aligned Authentic Logos */}
+              <div className="space-y-3 pt-3 border-t border-slate-700/60">
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-[#009A44]" />
-                    Participating Organizations
+                    Resident Co-Locators & Partners
                   </span>
+                  <span className="text-[10px] text-emerald-400 font-mono">4 Entities</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* FabLab Rwanda */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-[#009A44]/60 transition-all group">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#E31B23] shrink-0" />
-                      <span className="text-xs font-bold text-white truncate">Fablab Rwanda</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Fabrication & Prototyping</p>
-                  </div>
-
-                  {/* Klab */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-sky-400/60 transition-all group">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0" />
-                      <span className="text-xs font-bold text-white truncate">Klab</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Tech Innovation Space</p>
-                  </div>
-
-                  {/* Fab Cafe */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-amber-400/60 transition-all group">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
-                      <span className="text-xs font-bold text-white truncate">Fab Cafe</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Collaborative Cafeteria</p>
-                  </div>
-
-                  {/* 250Startups */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-purple-400/60 transition-all group">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full bg-purple-400 shrink-0" />
-                      <span className="text-xs font-bold text-white truncate">250Startups</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Incubator & Startups Hub</p>
-                  </div>
+                <div className="space-y-2">
+                  <AlignedPartnerLogos theme="dark" size="md" layout="grid" />
                 </div>
+                <p className="text-[10px] text-slate-400 text-center italic">
+                  Note: Fablab Rwanda and Fab Cafe operate collaboratively under the primary FabLab design brand.
+                </p>
               </div>
 
             </div>
@@ -217,20 +195,46 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           {/* RIGHT: Modern White Login Card */}
           <div className="w-full lg:col-span-6 flex justify-center">
-            <div className="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-5 animate-in fade-in zoom-in-95 duration-200">
               
-              {/* Header with FabLab logo */}
-              <div className="text-center space-y-2">
-                <div className="flex justify-center pb-1">
-                  <FabLabLogo size="lg" theme="light" subtitle="" />
+              {/* Aligned Logos Strip on Top of Card */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5">
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Participating Organizations
+                  </span>
+                  <span className="text-[9px] font-bold bg-[#EBF3FA] text-[#0F4C81] px-1.5 py-0.5 rounded">
+                    Telecom House
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
-                  <p className="text-xs text-slate-500">
-                    Sign in to access the Shared Expenses Management System.
-                  </p>
-                </div>
+                <AlignedPartnerLogos theme="light" size="sm" layout="horizontal" />
               </div>
+
+              {/* Dynamic Org Banner or Welcome Header */}
+              {(() => {
+                const activeMeta = getOrgMeta(email);
+                const isDeptAccount = email.includes('klab') || email.includes('250') || email.includes('cafe') || email.includes('fablab');
+                
+                if (isDeptAccount) {
+                  return (
+                    <div className="p-3 rounded-xl border bg-slate-50/80 flex items-center justify-between transition-all animate-in fade-in duration-150">
+                      <OrgLogo orgName={email} size="sm" variant="horizontal" showSubtitle={true} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Active Portal
+                      </span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="text-center space-y-1 pt-1">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Welcome back</h2>
+                    <p className="text-xs text-slate-500">
+                      Sign in to your organization portal to manage shared facility expenses.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Error Alert */}
               {errorMessage && (
@@ -359,36 +363,53 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <div className="pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Department & Admin Accounts
+                    Direct Department Portals
                   </p>
                   <span className="text-[10px] text-slate-400 font-mono">Password: admin123</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {[
-                    { label: 'Emmanuel Niyonzima', email: 'niyonzimaemmanuel85@gmail.com', badge: 'Administrator' },
-                    { label: 'Fablab Rwanda', email: 'info@fablabrwanda.com', badge: 'Department' },
-                    { label: 'Klab', email: 'info@klab.rw', badge: 'Department' },
-                    { label: 'Fab Cafe', email: 'info@fabcafe.rw', badge: 'Department' },
-                    { label: '250Startups', email: 'info@250startups.rw', badge: 'Department' },
+                    { label: 'Emmanuel Niyonzima', email: 'niyonzimaemmanuel85@gmail.com', badge: 'Super Admin', org: 'ADMIN' },
+                    { label: 'Fablab Rwanda', email: 'info@fablabrwanda.com', badge: 'Department', org: 'FABLAB' },
+                    { label: 'Klab Space', email: 'info@klab.rw', badge: 'Department', org: 'KLAB' },
+                    { label: 'Fab Cafe', email: 'info@fabcafe.rw', badge: 'Department', org: 'CAF' },
+                    { label: '250Startups', email: 'info@250startups.rw', badge: 'Department', org: '250S' },
                   ].map((staff) => (
                     <button
                       key={staff.email}
                       type="button"
                       onClick={() => handleQuickFill(staff.email)}
-                      className={`text-left px-2.5 py-1.5 rounded-lg border text-[11px] transition-all cursor-pointer flex items-center justify-between ${
-                        staff.badge === 'Administrator'
+                      className={`text-left px-2.5 py-2 rounded-xl border text-[11px] transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                        staff.badge === 'Super Admin'
                           ? 'sm:col-span-2 bg-[#E8F8EE] border-[#A7E7BF] hover:bg-[#D3F3DE] text-[#007D37]'
+                          : email === staff.email
+                          ? 'bg-[#EBF3FA] border-[#0F4C81]/40 ring-1 ring-[#0F4C81]'
                           : 'bg-slate-50 hover:bg-[#EBF3FA] hover:text-[#0F4C81] border-slate-200/80'
                       }`}
                     >
-                      <div className="min-w-0 pr-1">
-                        <p className="font-bold truncate text-slate-800">{staff.label}</p>
-                        <p className="text-[10px] text-slate-500 truncate">{staff.email}</p>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {staff.badge === 'Super Admin' ? (
+                          <div className="w-6 h-6 rounded-lg bg-[#009A44] text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-xs">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                          </div>
+                        ) : (
+                          <OrgLogo orgCode={staff.org} size="xs" variant="icon" theme="light" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold truncate text-slate-800 leading-tight">{staff.label}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{staff.email}</p>
+                        </div>
                       </div>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 ${
-                        staff.badge === 'Administrator' ? 'bg-[#009A44] text-white' : 'bg-slate-200 text-slate-700'
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        staff.badge === 'Super Admin' 
+                          ? 'bg-[#009A44] text-white' 
+                          : staff.org === '250S'
+                          ? 'bg-purple-100 text-purple-800'
+                          : staff.org === 'KLAB'
+                          ? 'bg-sky-100 text-sky-800'
+                          : 'bg-slate-200 text-slate-700'
                       }`}>
-                        {staff.badge}
+                        {staff.badge === 'Super Admin' ? 'Executive' : staff.org}
                       </span>
                     </button>
                   ))}
@@ -396,28 +417,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
 
               {/* Mobile / Tablet Partner Organizations Quick Strip */}
-              <div className="lg:hidden pt-3 border-t border-slate-100 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Participating Organizations
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 text-left">
-                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#E31B23] shrink-0" />
-                    <span className="text-[11px] font-bold text-slate-700 truncate">Fablab Rwanda</span>
-                  </div>
-                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                    <span className="text-[11px] font-bold text-slate-700 truncate">Klab</span>
-                  </div>
-                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                    <span className="text-[11px] font-bold text-slate-700 truncate">Fab Cafe</span>
-                  </div>
-                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-                    <span className="text-[11px] font-bold text-slate-700 truncate">250Startups</span>
-                  </div>
-                </div>
+              <div className="lg:hidden pt-3 border-t border-slate-100">
+                <AlignedPartnerLogos theme="light" size="sm" layout="horizontal" />
               </div>
             </div>
           </div>

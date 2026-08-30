@@ -30,6 +30,7 @@ import { AccountingService } from '../../services/accountingService';
 import { UserRole, User } from '../../types/financial';
 import { SecurityScope } from '../../utils/securityScope';
 import { FabLabLogo } from '../common/FabLabLogo';
+import { OrgLogo } from '../common/OrgLogo';
 
 interface SidebarProps {
   currentModule: string;
@@ -255,7 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand Header with Authentic FabLab Logo */}
+        {/* Brand Header with Authentic Organization Logo */}
         <div 
           onClick={() => {
             onNavigate('dashboard');
@@ -263,7 +264,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           className="h-16 px-4 flex items-center border-b border-[#0B3B66] bg-[#0B3B66]/60 cursor-pointer group"
         >
-          <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
+          {isAdmin ? (
+            <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
+          ) : (
+            <OrgLogo 
+              user={currentUser} 
+              theme="dark" 
+              size="md" 
+              variant="horizontal" 
+              showSubtitle={true}
+            />
+          )}
         </div>
 
         {/* Navigation Content */}

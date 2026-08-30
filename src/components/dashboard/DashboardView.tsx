@@ -50,6 +50,7 @@ import { AccountingService } from '../../services/accountingService';
 import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
 import { SecurityScope } from '../../utils/securityScope';
+import { OrgLogo } from '../common/OrgLogo';
 import { Lock } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -203,30 +204,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       
       {/* 1. Header Banner & Quick Financial Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
-              {isAdmin ? 'Shared Expenses Management System' : `${userOrg?.name || 'Department'} Financial Portal`}
-            </h1>
-            <span className="px-2.5 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
-              FY {selectedYear}
-            </span>
-            {isAdmin ? (
-              <span className="px-2.5 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
-                Super Admin: Emmanuel Niyonzima
+        <div className="flex items-start sm:items-center gap-3.5">
+          {!isAdmin && (
+            <div className="shrink-0 pt-0.5 sm:pt-0">
+              <OrgLogo user={state.currentUser} size="md" variant="icon" theme="light" />
+            </div>
+          )}
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                {isAdmin ? 'Shared Expenses Management System' : `${userOrg?.name || 'Department'} Financial Portal`}
+              </h1>
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
+                FY {selectedYear}
               </span>
-            ) : (
-              <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded-md flex items-center gap-1">
-                <Lock className="w-3 h-3 text-purple-600" />
-                Department Isolated: {userOrg?.name}
-              </span>
-            )}
+              {isAdmin ? (
+                <span className="px-2.5 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
+                  Super Admin: Emmanuel Niyonzima
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 rounded-md flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-purple-600" />
+                  Department Isolated: {userOrg?.name}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              {isAdmin 
+                ? 'Executive consolidated multi-department management dashboard, shared facility allocation matrix, and auditable accounting ledgers.'
+                : `Department workspace for ${userOrg?.name}. Submit shared expenses with receipts to Super Administrator Emmanuel Niyonzima for review and approval.`}
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            {isAdmin 
-              ? 'Executive consolidated multi-department management dashboard, shared facility allocation matrix, and auditable accounting ledgers.'
-              : `Department workspace for ${userOrg?.name}. Submit shared expenses with receipts to Super Administrator Emmanuel Niyonzima for review and approval.`}
-          </p>
         </div>
 
         {/* Action Controls */}

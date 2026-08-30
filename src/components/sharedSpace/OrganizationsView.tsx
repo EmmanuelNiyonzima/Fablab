@@ -25,6 +25,7 @@ import { FinancialCalculator } from '../../services/calculationService';
 import { ExportService } from '../../services/exportService';
 import { SecurityScope } from '../../utils/securityScope';
 import { Organization } from '../../types/financial';
+import { OrgLogo } from '../common/OrgLogo';
 
 interface OrganizationsViewProps {
   onNavigate?: (module: string) => void;
@@ -314,8 +315,8 @@ export const OrganizationsView: React.FC<OrganizationsViewProps> = ({ onNavigate
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-xs">
-                    {org.code.slice(0, 3)}
+                  <div className="shrink-0">
+                    <OrgLogo orgId={org.id} orgCode={org.code} orgName={org.name} size="md" variant="icon" theme="light" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
