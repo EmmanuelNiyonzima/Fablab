@@ -5,7 +5,7 @@ import { FinancialCalculator } from './calculationService';
 
 export class ExportService {
   /**
-   * Export JSON data to styled Excel Sheet (.xlsx) with FabLab Rwanda Official Header
+   * Export JSON data to styled Excel Sheet (.xlsx) with Shared Expenses Management System Official Header
    */
   static exportToExcel(
     title: string,
@@ -18,9 +18,10 @@ export class ExportService {
 
     // Prepare content matrix with branded header
     const matrix: (string | number)[][] = [
-      ['FABLAB RWANDA - FINANCIAL MANAGEMENT SYSTEM (FMS)'],
-      ['Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali, Rwanda'],
-      ['Logo & Brand: FabLab Rwanda Multi-Entity Financial Governance'],
+      ['SHARED EXPENSES MANAGEMENT SYSTEM'],
+      ['Telecom House Shared Facility (6th Floor) | Boulevard de l’Umuganda, Kacyiru, Kigali, Rwanda'],
+      ['Participating Organizations: Fablab Rwanda (38%) | Klab (32%) | Fab Cafe (18%) | 250Startups (12%)'],
+      ['Executive Administrator: Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)'],
       [`Report Title: ${title}`],
       [`Generated Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`],
       [`Currency: RWF (Rwandan Francs)`],
@@ -28,7 +29,7 @@ export class ExportService {
     ];
 
     if (summaryStats && summaryStats.length > 0) {
-      matrix.push(['KEY SUMMARY METRICS:']);
+      matrix.push(['KEY SUMMARY FINANCIAL METRICS:']);
       summaryStats.forEach((stat) => {
         matrix.push([stat.label, stat.value]);
       });
@@ -150,41 +151,41 @@ export class ExportService {
 
     // Organization Brand Typography
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text('FABLAB RWANDA', 42, 15);
+    doc.text('SHARED EXPENSES MANAGEMENT SYSTEM', 42, 14);
 
-    // Mini FMS badge
-    doc.setFillColor(15, 76, 129);
-    doc.roundedRect(102, 9, 14, 7, 1.5, 1.5, 'F');
+    // Mini SEMS badge
+    doc.setFillColor(0, 154, 68);
+    doc.roundedRect(pageWidth - 28, 9, 16, 7, 1.5, 1.5, 'F');
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('FMS', 105.5, 14);
+    doc.text('SEMS', pageWidth - 25, 14);
 
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(226, 232, 240);
-    doc.text('Center for Innovation & Digital Fabrication | Telecom House 6th Floor, Kigali', 42, 22);
-    doc.text('Official Financial & Multi-Entity Cost Sharing Governance Report', 42, 28);
+    doc.text('Telecom House Shared Facility (6th Floor) | Kigali, Rwanda', 42, 21);
+    doc.text('Participating: Fablab Rwanda (38%) | Klab (32%) | Fab Cafe (18%) | 250Startups (12%)', 42, 27);
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text('Currency: RWF (Rwandan Francs) | Compliant with Rwanda Accounting Standards', 42, 33);
+    doc.text('Super Administrator: Emmanuel Niyonzima | Currency: RWF (Rwandan Francs)', 42, 33);
 
     // Title Section
     doc.setTextColor(15, 23, 42);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, 14, 48);
+    doc.text(title, 14, 47);
 
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
     const dateStr = `Generated: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`;
     const authorStr = options?.generatedBy ? ` | Prepared by: ${options.generatedBy}` : '';
-    doc.text(`${dateStr}${authorStr}`, 14, 54);
+    doc.text(`${dateStr}${authorStr}`, 14, 53);
 
-    let startY = 58;
+    let startY = 57;
 
     // Summary Stat Badges if provided
     if (options?.summaryStats && options.summaryStats.length > 0) {

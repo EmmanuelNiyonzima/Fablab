@@ -131,7 +131,7 @@ export const IncomeView: React.FC = () => {
       i.status,
     ]);
 
-    ExportService.exportToExcel('Income & Revenues Register', 'FabLab_Income', headers, rows, [
+    ExportService.exportToExcel('Income & Revenues Register', 'SEMS_Income_Register', headers, rows, [
       { label: 'Total Filtered Income', value: FinancialCalculator.formatRWF(totalIncomeAmount) },
     ]);
   };

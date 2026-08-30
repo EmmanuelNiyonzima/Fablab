@@ -12,6 +12,8 @@ export interface User {
   email: string;
   role: UserRole;
   department: string;
+  organizationId?: string; // e.g. org-fablab, org-klab, org-fabcafe, org-250startups
+  organizationName?: string;
   avatar?: string;
   lastLogin?: string;
   status: 'active' | 'inactive';
@@ -96,6 +98,12 @@ export interface SharedExpense {
   supportingDocName?: string;
   supportingDocSize?: string;
   notes?: string;
+  submitterComments?: string;
+  submittedByOrgId?: string;
+  submittedByOrgName?: string;
+  submittedByEmail?: string;
+  adminRemarks?: string;
+  rejectionReason?: string;
   createdBy: string;
   createdAt: string;
   updatedBy: string;

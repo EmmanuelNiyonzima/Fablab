@@ -171,17 +171,52 @@ class AuthService {
     );
 
     if (!matchedUser) {
-      // Auto-provision user with admin role if password admin123 was entered
-      const defaultName = trimmedEmail.includes('niyonzima')
-        ? 'Emmanuel Niyonzima'
-        : trimmedEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+      // Auto-provision user with role and department based on email
+      let defaultName = 'System User';
+      let department = 'Operations';
+      let role: UserRole = 'FINANCE_MANAGER';
+      let organizationId: string | undefined = undefined;
+      let organizationName: string | undefined = undefined;
+
+      if (trimmedEmail.includes('niyonzima') || trimmedEmail.includes('admin')) {
+        defaultName = 'Emmanuel Niyonzima';
+        department = 'Executive Administration & Operations';
+        role = 'ADMIN';
+        organizationName = 'All Departments (Executive Management)';
+      } else if (trimmedEmail.includes('fablabrwanda') || trimmedEmail.includes('fablab.rw')) {
+        defaultName = 'Fablab Rwanda Operations';
+        department = 'Digital Fabrication & Prototyping';
+        organizationId = 'org-fablab';
+        organizationName = 'Fablab Rwanda';
+      } else if (trimmedEmail.includes('klab')) {
+        defaultName = 'Klab Operations & Tech Space';
+        department = 'Technology Innovation & Mentorship';
+        organizationId = 'org-klab';
+        organizationName = 'Klab';
+      } else if (trimmedEmail.includes('fabcafe')) {
+        defaultName = 'Fab Cafe Cafeteria & Networking';
+        department = 'Cafeteria & Hospitality';
+        organizationId = 'org-fabcafe';
+        organizationName = 'Fab Cafe';
+      } else if (trimmedEmail.includes('250startups')) {
+        defaultName = '250Startups Hub Management';
+        department = 'Incubator & Startups Program';
+        organizationId = 'org-250startups';
+        organizationName = '250Startups';
+      } else {
+        defaultName = trimmedEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+        department = 'Finance';
+        role = 'FINANCE_MANAGER';
+      }
       
       matchedUser = {
         id: `usr-${Date.now()}`,
         name: defaultName,
         email: trimmedEmail,
-        role: 'ADMIN',
-        department: 'Executive Administration',
+        role,
+        department,
+        organizationId,
+        organizationName,
         avatar: trimmedEmail.substring(0, 2).toUpperCase(),
         status: 'active',
         lastLogin: new Date().toISOString().replace('T', ' ').slice(0, 16),

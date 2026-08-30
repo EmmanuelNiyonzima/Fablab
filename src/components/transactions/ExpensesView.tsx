@@ -154,7 +154,7 @@ export const ExpensesView: React.FC = () => {
       e.status,
     ]);
 
-    ExportService.exportToExcel('Expenses Register', 'FabLab_Expenses', headers, rows, [
+    ExportService.exportToExcel('Expenses Register', 'SEMS_Expenses_Register', headers, rows, [
       { label: 'Total Filtered Expenses', value: FinancialCalculator.formatRWF(totalExpenseAmount) },
       { label: 'Total Approved / Posted', value: FinancialCalculator.formatRWF(approvedExpenseAmount) },
     ]);

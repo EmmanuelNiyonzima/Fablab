@@ -63,15 +63,32 @@ class StorageService {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure all arrays exist
+        
+        // Merge or replace users to guarantee the 5 department and admin accounts exist
+        const mergedUsers = [...INITIAL_USERS];
+        if (Array.isArray(parsed.users)) {
+          parsed.users.forEach((u: User) => {
+            if (!mergedUsers.some((mu) => mu.email.toLowerCase() === u.email.toLowerCase())) {
+              mergedUsers.push(u);
+            }
+          });
+        }
+
+        // Merge shared expenses to ensure initial submitted sample expenses exist
+        const mergedShared = Array.isArray(parsed.sharedExpenses) && parsed.sharedExpenses.length > 0 
+          ? parsed.sharedExpenses 
+          : INITIAL_SHARED_EXPENSES;
+
         return {
           settings: parsed.settings || INITIAL_SETTINGS,
-          users: parsed.users || INITIAL_USERS,
-          currentUser: parsed.currentUser || INITIAL_USERS[0],
+          users: mergedUsers,
+          currentUser: parsed.currentUser && mergedUsers.some(u => u.email === parsed.currentUser.email) 
+            ? parsed.currentUser 
+            : INITIAL_USERS[0],
           organizations: parsed.organizations || INITIAL_ORGANIZATIONS,
           accounts: parsed.accounts || INITIAL_ACCOUNTS,
           allocationPolicies: parsed.allocationPolicies || INITIAL_ALLOCATION_POLICIES,
-          sharedExpenses: parsed.sharedExpenses || INITIAL_SHARED_EXPENSES,
+          sharedExpenses: mergedShared,
           expenseTransactions: parsed.expenseTransactions || INITIAL_EXPENSE_TRANSACTIONS,
           incomeTransactions: parsed.incomeTransactions || INITIAL_INCOME_TRANSACTIONS,
           journalEntries: parsed.journalEntries || INITIAL_JOURNAL_ENTRIES,
@@ -390,6 +407,73 @@ class StorageService {
         this.syncSharedExpenseToLedger(exp);
       }
       this.logAudit('UPDATE_EXPENSE_STATUS', 'Shared Expenses', exp.expenseNumber, oldStatus, newStatus);
+      this.persist();
+    }
+  }
+
+  public approveSharedExpense(id: string, adminRemarks?: string) {
+    const exp = this.state.sharedExpenses.find((e) => e.id === id);
+    if (exp) {
+      const oldStatus = exp.status;
+      const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      exp.status = 'Posted';
+      exp.approvedBy = this.state.currentUser.name || 'Emmanuel Niyonzima (Administrator)';
+      exp.approvedAt = nowStr;
+      exp.adminRemarks = adminRemarks || 'Approved and confirmed by Administrator for shared facility cost allocation.';
+      exp.updatedBy = this.state.currentUser.name;
+      exp.updatedAt = nowStr;
+      
+      this.syncSharedExpenseToLedger(exp);
+      this.logAudit(
+        'APPROVE_SHARED_EXPENSE',
+        'Shared Expenses',
+        exp.expenseNumber,
+        oldStatus,
+        `Administrator ${exp.approvedBy} approved shared expense ${exp.description} (${FinancialCalculator.formatRWF(exp.totalAmount)}). Remarks: ${exp.adminRemarks}`
+      );
+      this.persist();
+    }
+  }
+
+  public rejectSharedExpense(id: string, rejectionReason: string) {
+    const exp = this.state.sharedExpenses.find((e) => e.id === id);
+    if (exp) {
+      const oldStatus = exp.status;
+      const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      exp.status = 'Rejected';
+      exp.rejectionReason = rejectionReason;
+      exp.adminRemarks = `Rejected: ${rejectionReason}`;
+      exp.updatedBy = this.state.currentUser.name;
+      exp.updatedAt = nowStr;
+      
+      this.logAudit(
+        'REJECT_SHARED_EXPENSE',
+        'Shared Expenses',
+        exp.expenseNumber,
+        oldStatus,
+        `Administrator ${this.state.currentUser.name} rejected shared expense ${exp.description}. Reason: ${rejectionReason}`
+      );
+      this.persist();
+    }
+  }
+
+  public requestRevisionSharedExpense(id: string, remarks: string) {
+    const exp = this.state.sharedExpenses.find((e) => e.id === id);
+    if (exp) {
+      const oldStatus = exp.status;
+      const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      exp.status = 'Draft';
+      exp.adminRemarks = remarks;
+      exp.updatedBy = this.state.currentUser.name;
+      exp.updatedAt = nowStr;
+      
+      this.logAudit(
+        'REVISION_REQUEST_SHARED_EXPENSE',
+        'Shared Expenses',
+        exp.expenseNumber,
+        oldStatus,
+        `Administrator requested revision for ${exp.description}. Remarks: ${remarks}`
+      );
       this.persist();
     }
   }

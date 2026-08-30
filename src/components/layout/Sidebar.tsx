@@ -64,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const unapprovedCount = quality.unapprovedTransactions.length;
   const overdueCtbCount = quality.overdueContributions.length;
   const unreconciledShared = quality.unreconciledSharedExpenses.length;
+  const pendingSubmissionsCount = state.sharedExpenses.filter((e) => e.status === 'Submitted').length;
 
   const sections: NavSection[] = [
     {
@@ -87,8 +88,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id: 'shared-expenses', 
           label: 'Shared Expenses', 
           icon: Layers, 
-          badge: unreconciledShared > 0 ? `${unreconciledShared} Diff` : undefined,
-          badgeColor: 'red'
+          badge: pendingSubmissionsCount > 0 
+            ? `${pendingSubmissionsCount} Pending` 
+            : (unreconciledShared > 0 ? `${unreconciledShared} Diff` : undefined),
+          badgeColor: pendingSubmissionsCount > 0 ? 'amber' : 'red'
         },
         { id: 'organizations', label: 'Organizations (4)', icon: Building2 },
         { 
@@ -233,7 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           className="h-16 px-4 flex items-center border-b border-[#0B3B66] bg-[#0B3B66]/60 cursor-pointer group"
         >
-          <FabLabLogo size="md" theme="dark" subtitle="fablab_ Finance_Management System" />
+          <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
         </div>
 
         {/* Navigation Content */}

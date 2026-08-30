@@ -106,7 +106,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleQuickFill = (presetEmail: string) => {
     setEmail(presetEmail);
-    setPassword('');
+    setPassword('admin123');
     setValidationErrors({});
     setErrorMessage('');
   };
@@ -357,24 +357,39 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
               {/* Quick Staff Account Switcher for Instant Demo & Testing */}
               <div className="pt-2 border-t border-slate-100">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">
-                  Quick Staff Login Presets
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Department & Admin Accounts
+                  </p>
+                  <span className="text-[10px] text-slate-400 font-mono">Password: admin123</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {[
-                    { label: 'Administrator', email: 'niyonzimaemmanuel85@gmail.com' },
-                    { label: 'Finance Manager', email: 'm.uwera@fablab.rw' },
-                    { label: 'Financial Analyst', email: 'p.mugisha@fablab.rw' },
-                    { label: 'Senior Accountant', email: 'a.umutoni@fablab.rw' },
+                    { label: 'Emmanuel Niyonzima', email: 'niyonzimaemmanuel85@gmail.com', badge: 'Administrator' },
+                    { label: 'Fablab Rwanda', email: 'info@fablabrwanda.com', badge: 'Department' },
+                    { label: 'Klab', email: 'info@klab.rw', badge: 'Department' },
+                    { label: 'Fab Cafe', email: 'info@fabcafe.rw', badge: 'Department' },
+                    { label: '250Startups', email: 'info@250startups.rw', badge: 'Department' },
                   ].map((staff) => (
                     <button
                       key={staff.email}
                       type="button"
                       onClick={() => handleQuickFill(staff.email)}
-                      className="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-[#EBF3FA] hover:text-[#0F4C81] border border-slate-200/80 text-[11px] transition-colors cursor-pointer"
+                      className={`text-left px-2.5 py-1.5 rounded-lg border text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        staff.badge === 'Administrator'
+                          ? 'sm:col-span-2 bg-[#E8F8EE] border-[#A7E7BF] hover:bg-[#D3F3DE] text-[#007D37]'
+                          : 'bg-slate-50 hover:bg-[#EBF3FA] hover:text-[#0F4C81] border-slate-200/80'
+                      }`}
                     >
-                      <p className="font-bold truncate">{staff.label}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{staff.email}</p>
+                      <div className="min-w-0 pr-1">
+                        <p className="font-bold truncate text-slate-800">{staff.label}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{staff.email}</p>
+                      </div>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md shrink-0 ${
+                        staff.badge === 'Administrator' ? 'bg-[#009A44] text-white' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {staff.badge}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -483,7 +498,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       {/* Footer */}
       <footer className="px-6 py-3 border-t border-slate-800 text-center text-xs text-slate-400 relative z-10 flex items-center justify-center">
-        <p>© 2026 FabLab Rwanda. Telecom House, 6th Floor, Kigali.</p>
+        <p>© 2026 Shared Expenses Management System • Telecom House, 6th Floor, Kigali.</p>
       </footer>
     </div>
   );

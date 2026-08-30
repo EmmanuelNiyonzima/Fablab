@@ -141,14 +141,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              FabLab Rwanda Financial Overview
+              Shared Expenses Management System
             </h1>
             <span className="px-2 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
               FY {selectedYear}
             </span>
+            {state.currentUser.role === 'ADMIN' && (
+              <span className="px-2 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
+                Admin: Emmanuel Niyonzima
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Official facility financial metrics, double-entry general ledger, and 4-org shared cost apportionment.
+            Executive financial governance, double-entry general ledger, and multi-organization shared expense management.
           </p>
         </div>
 
@@ -158,9 +163,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             variant="primary"
             size="sm"
             icon={PlusCircle}
-            onClick={() => onNavigate('expenses')}
+            onClick={() => onNavigate('shared-expenses')}
           >
-            New Expense
+            Submit Shared Expense
           </Button>
           <Button
             variant="secondary"
@@ -168,14 +173,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             icon={ArrowUpRight}
             onClick={() => onNavigate('income')}
           >
-            Post Income
+            Post Revenue / Income
           </Button>
           <Button
             variant="outline"
             size="sm"
             icon={FileSpreadsheet}
             onClick={() => {
-              const headers = ['Date', 'Vendor', 'Category', 'Description', 'Total (RWF)', 'Status'];
+              const headers = ['Date', 'Vendor / Org', 'Category', 'Description', 'Total (RWF)', 'Status'];
               const rows = state.expenseTransactions.map((e) => [
                 e.date,
                 e.vendor,
@@ -184,13 +189,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 e.totalWithTax,
                 e.status,
               ]);
-              ExportService.exportToExcel('Expenses Register', 'FabLab_Expenses', headers, rows);
+              ExportService.exportToExcel('Executive Financial Summary Register', 'SEMS_Financial_Report', headers, rows);
             }}
           >
             Export Excel
           </Button>
         </div>
       </div>
+
+      {/* Pending Submissions Quick Action Notice for Administrator */}
+      {state.sharedExpenses.filter((e) => e.status === 'Submitted').length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-xs shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-amber-950">
+                {state.sharedExpenses.filter((e) => e.status === 'Submitted').length} Department Shared Expense(s) Awaiting Confirmation
+              </p>
+              <p className="text-[11px] text-amber-800">
+                Departments have submitted shared space expenses with comments for Emmanuel's review and general ledger posting.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('shared-expenses')}
+            className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            Review & Confirm Submissions
+          </button>
+        </div>
+      )}
 
       {/* 8 Primary Financial KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -533,7 +564,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   </div>
                   <div>
                     <p className="font-bold text-slate-900">Shared Facility Apportionment</p>
-                    <p className="text-[11px] text-slate-500">Fablab 30%, Klab 20%, Fab Cafe 40%, 250S 10%</p>
+                    <p className="text-[11px] text-slate-500">FabLab Rwanda, kLab, Fab Cafe, 250Startups</p>
                   </div>
                 </div>
                 <Badge variant="success">100.0% Exact</Badge>
