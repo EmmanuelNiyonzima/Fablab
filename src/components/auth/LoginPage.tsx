@@ -13,7 +13,11 @@ import {
   AlertCircle,
   KeyRound,
   X,
-  Layers
+  Layers,
+  Coffee,
+  Rocket,
+  Cpu,
+  Share2
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { FabLabLogo } from '../common/FabLabLogo';
@@ -135,29 +139,101 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       {/* Top Header */}
       <header className="px-6 py-4 border-b border-slate-800/80 bg-[#0B192C]/90 backdrop-blur-md relative z-10 flex items-center justify-between">
-        <FabLabLogo size="md" theme="dark" subtitle="fablab_ Finance_Management System" />
+        <FabLabLogo size="md" theme="dark" subtitle="Shared Expenses Management System" />
       </header>
 
       {/* Main Split Layout */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 relative z-10">
         <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* LEFT: FabLab Brand Identity & Financial Intelligence */}
-          <div className="hidden lg:flex lg:col-span-6 flex-col justify-center space-y-6 text-slate-200">
-            <div className="p-8 rounded-3xl bg-[#0B192C]/60 backdrop-blur-md border border-slate-700/60 shadow-2xl space-y-4 max-w-lg">
-              <div className="space-y-3">
+          {/* LEFT: Shared Expenses Management System & Partner Organizations */}
+          <div className="hidden lg:flex lg:col-span-6 flex-col justify-center space-y-5 text-slate-200">
+            <div className="p-7 rounded-3xl bg-[#0B192C]/75 backdrop-blur-md border border-slate-700/60 shadow-2xl space-y-5 max-w-lg">
+              
+              {/* Header Title Section */}
+              <div className="space-y-2.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#009A44]/20 border border-[#009A44]/40 text-[#009A44] text-xs font-semibold">
                   <span className="w-2 h-2 rounded-full bg-[#009A44] animate-ping" />
-                  <span>FabLab Rwanda Financial Core</span>
+                  <span>Telecom House Shared Facility</span>
                 </div>
-                <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+                <h1 className="text-2xl xl:text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
                   <span className="text-white">fablab_</span> <br />
-                  <span className="text-[#009A44]">Finance_Management System</span>
+                  <span className="text-[#009A44]">Shared Expenses Management System</span>
                 </h1>
-                <p className="text-sm text-slate-300 leading-relaxed drop-shadow-xs">
-                  Powering smarter financial decisions through accurate data and intelligent reporting.
+                <p className="text-xs text-slate-300 leading-relaxed drop-shadow-xs">
+                  Powering unified facility cost allocation, expense tracking, and transparent financial reconciliation for co-located partner organizations.
                 </p>
               </div>
+
+              {/* Partner Organizations Section */}
+              <div className="space-y-2.5 pt-3 border-t border-slate-700/60">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-[#009A44]" />
+                    Co-located Organizations
+                  </span>
+                  <span className="text-[#009A44] font-mono text-[10px]">100% Allocated</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* FabLab Rwanda */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-[#009A44]/60 transition-all group">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-[#E31B23] shrink-0" />
+                        <span className="text-xs font-bold text-white truncate">Fablab Rwanda</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#009A44] bg-[#009A44]/15 px-1.5 py-0.5 rounded shrink-0">
+                        38%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">Fabrication & Prototyping</p>
+                  </div>
+
+                  {/* Klab */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-sky-400/60 transition-all group">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                        <span className="text-xs font-bold text-white truncate">Klab</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-sky-400 bg-sky-400/15 px-1.5 py-0.5 rounded shrink-0">
+                        32%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">Tech Innovation Space</p>
+                  </div>
+
+                  {/* Fab Cafe */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-amber-400/60 transition-all group">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                        <span className="text-xs font-bold text-white truncate">Fab Cafe</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-400/15 px-1.5 py-0.5 rounded shrink-0">
+                        18%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">Collaborative Cafeteria</p>
+                  </div>
+
+                  {/* 250Startups */}
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-purple-400/60 transition-all group">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                        <span className="text-xs font-bold text-white truncate">250Startups</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-400/15 px-1.5 py-0.5 rounded shrink-0">
+                        12%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 truncate">Incubator & Startups Hub</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -173,7 +249,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="space-y-1">
                   <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
                   <p className="text-xs text-slate-500">
-                    Sign in to continue to your financial workspace.
+                    Sign in to access the Shared Expenses Management System.
                   </p>
                 </div>
               </div>
@@ -323,6 +399,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       <p className="text-[10px] text-slate-400 truncate">{staff.email}</p>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Mobile / Tablet Partner Organizations Quick Strip */}
+              <div className="lg:hidden pt-3 border-t border-slate-100 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Shared Facility Organizations
+                </p>
+                <div className="grid grid-cols-2 gap-1.5 text-left">
+                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">Fablab Rwanda</span>
+                    <span className="text-[9px] font-mono font-bold text-[#009A44]">38%</span>
+                  </div>
+                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">Klab</span>
+                    <span className="text-[9px] font-mono font-bold text-sky-500">32%</span>
+                  </div>
+                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">Fab Cafe</span>
+                    <span className="text-[9px] font-mono font-bold text-amber-500">18%</span>
+                  </div>
+                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">250Startups</span>
+                    <span className="text-[9px] font-mono font-bold text-purple-500">12%</span>
+                  </div>
                 </div>
               </div>
             </div>
