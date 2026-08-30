@@ -748,6 +748,51 @@ class StorageService {
     return newInc;
   }
 
+  public batchAddIncomeTransactions(
+    incomeList: Array<Omit<IncomeTransaction, 'id' | 'incomeNumber' | 'createdAt' | 'updatedAt' | 'createdBy' | 'totalWithTax'>>
+  ): IncomeTransaction[] {
+    const user = this.state.currentUser;
+    const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const addedTransactions: IncomeTransaction[] = [];
+    let startIdx = this.state.incomeTransactions.length;
+    let totalImportedAmount = 0;
+
+    for (const item of incomeList) {
+      startIdx++;
+      const incomeNumber = `INC-2026-${String(startIdx).padStart(4, '0')}`;
+      const totalWithTax = (item.amount || 0) + (item.tax || 0);
+
+      const newInc: IncomeTransaction = {
+        ...item,
+        id: `inc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        incomeNumber,
+        totalWithTax,
+        createdBy: user.name,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+      };
+
+      this.state.incomeTransactions.unshift(newInc);
+      addedTransactions.push(newInc);
+      totalImportedAmount += totalWithTax;
+
+      if (newInc.status === 'Posted') {
+        this.syncIncomeToJournal(newInc);
+      }
+    }
+
+    this.logAudit(
+      'BATCH_IMPORT_INCOME',
+      'Transactions',
+      `BATCH-${addedTransactions.length}`,
+      undefined,
+      `Imported ${addedTransactions.length} revenue records totalling ${FinancialCalculator.formatRWF(totalImportedAmount)}`
+    );
+
+    this.persist();
+    return addedTransactions;
+  }
+
   private syncIncomeToJournal(inc: IncomeTransaction) {
     const journalNumber = `JNL-2026-${String(this.state.journalEntries.length + 1).padStart(3, '0')}`;
     const account = this.state.accounts.find((a) => a.id === inc.accountId) || this.state.accounts.find((a) => a.code === inc.accountCode);

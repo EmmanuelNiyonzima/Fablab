@@ -119,6 +119,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           badge: overdueCtbCount > 0 ? `${overdueCtbCount} Due` : undefined,
           badgeColor: 'amber'
         },
+        { 
+          id: 'record-revenue', 
+          label: 'Record Revenue', 
+          icon: TrendingUp,
+        },
+        { 
+          id: 'import-revenue', 
+          label: 'Import Revenue Dataset', 
+          icon: UploadCloud,
+        },
       ],
     },
     {

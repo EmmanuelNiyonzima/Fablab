@@ -191,7 +191,9 @@ export class SecurityScope {
   }
 
   /**
-   * Filter Direct Income:
+   * Filter Direct Income / Revenue:
+   * - Super Admin: Consolidated view of all department and facility revenues.
+   * - Department User: Restricted to their department's revenue receipts and entries.
    */
   static filterIncomeTransactions(
     incomes: IncomeTransaction[], 
@@ -202,11 +204,23 @@ export class SecurityScope {
     }
 
     const orgId = this.getUserOrgId(user);
+    if (!orgId) {
+      return incomes.filter((i) => i.createdBy === user?.name);
+    }
+
     return incomes.filter((i) => {
       if (i.organizationId) {
         return i.organizationId === orgId;
       }
-      return i.status === 'Approved' || i.status === 'Posted';
+      if (i.createdBy === user?.name) {
+        return true;
+      }
+      // If organization name or code matches
+      const orgName = user?.organizationName?.toLowerCase() || '';
+      if (orgName && (i.customer?.toLowerCase().includes(orgName) || i.description?.toLowerCase().includes(orgName))) {
+        return true;
+      }
+      return false;
     });
   }
 }

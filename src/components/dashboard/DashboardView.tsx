@@ -237,26 +237,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             icon={PlusCircle}
             onClick={() => onNavigate('shared-expenses')}
           >
-            Submit Department Expense
+            Submit Expense
           </Button>
-          {isAdmin && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={ArrowUpRight}
-              onClick={() => onNavigate('income')}
-            >
-              Post Income
-            </Button>
-          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={ArrowUpRight}
+            onClick={() => onNavigate('record-revenue')}
+            className="bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold"
+          >
+            Record Revenue
+          </Button>
           <Button
             variant="outline"
             size="sm"
             icon={FileSpreadsheet}
+            onClick={() => onNavigate('import-revenue')}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 font-bold"
+          >
+            Import Excel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Download}
             onClick={handleExportFullManagementExcel}
             className="border-emerald-600/50 text-emerald-800 hover:bg-emerald-50 font-bold"
           >
-            {isAdmin ? 'Export Management Excel' : 'Export Dept Excel'}
+            {isAdmin ? 'Export Excel' : 'Export Dept Excel'}
           </Button>
           <Button
             variant="outline"

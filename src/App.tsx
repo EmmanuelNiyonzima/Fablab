@@ -24,6 +24,7 @@ import { ContributionsView } from './components/sharedSpace/ContributionsView';
 // Transactions
 import { ExpensesView } from './components/transactions/ExpensesView';
 import { IncomeView } from './components/transactions/IncomeView';
+import { ImportRevenueDatasetView } from './components/transactions/ImportRevenueDatasetView';
 
 // Accounting
 import { ChartOfAccountsView } from './components/accounting/ChartOfAccountsView';
@@ -159,21 +160,24 @@ export default function App() {
       case 'control-center':
         return canAccessAdvanced ? <ControlCenterView onNavigate={handleNavigate} /> : <DashboardView onNavigate={handleNavigate} />;
 
-      // Shared Facility Space
+      // Shared Facility Space & Department Revenue Inflows
       case 'shared-expenses':
         return <SharedExpensesView />;
       case 'organizations':
-        return <OrganizationsView onNavigate={handleNavigate} />;
+        return isAdmin ? <OrganizationsView onNavigate={handleNavigate} /> : <DashboardView onNavigate={handleNavigate} />;
       case 'allocation-policies':
-        return <AllocationPoliciesView onNavigate={handleNavigate} />;
+        return isAdmin ? <AllocationPoliciesView onNavigate={handleNavigate} /> : <DashboardView onNavigate={handleNavigate} />;
       case 'contributions':
         return <ContributionsView />;
+      case 'record-revenue':
+      case 'income':
+        return <IncomeView onNavigate={handleNavigate} />;
+      case 'import-revenue':
+        return <ImportRevenueDatasetView onNavigate={handleNavigate} />;
 
       // Financial Transactions (Restricted to Admin & 250Startups)
       case 'expenses':
         return canAccessAdvanced ? <ExpensesView /> : <DashboardView onNavigate={handleNavigate} />;
-      case 'income':
-        return canAccessAdvanced ? <IncomeView /> : <DashboardView onNavigate={handleNavigate} />;
 
       // Double-Entry Accounting (Restricted to Admin & 250Startups)
       case 'chart-of-accounts':
