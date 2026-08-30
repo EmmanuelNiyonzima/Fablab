@@ -156,9 +156,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <span className="w-2 h-2 rounded-full bg-[#009A44] animate-ping" />
                   <span>Telecom House Shared Facility</span>
                 </div>
-                <h1 className="text-2xl xl:text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
-                  <span className="text-white">fablab_</span> <br />
-                  <span className="text-[#009A44]">Shared Expenses Management System</span>
+                <h1 className="text-2xl xl:text-3xl font-extrabold text-[#009A44] tracking-tight leading-tight drop-shadow-md">
+                  Shared Expenses Management System
                 </h1>
                 <p className="text-xs text-slate-300 leading-relaxed drop-shadow-xs">
                   Powering unified facility cost allocation, expense tracking, and transparent financial reconciliation for co-located partner organizations.
@@ -170,66 +169,45 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-[#009A44]" />
-                    Co-located Organizations
+                    Participating Organizations
                   </span>
-                  <span className="text-[#009A44] font-mono text-[10px]">100% Allocated</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   {/* FabLab Rwanda */}
                   <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-[#009A44]/60 transition-all group">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-[#E31B23] shrink-0" />
-                        <span className="text-xs font-bold text-white truncate">Fablab Rwanda</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-[#009A44] bg-[#009A44]/15 px-1.5 py-0.5 rounded shrink-0">
-                        38%
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#E31B23] shrink-0" />
+                      <span className="text-xs font-bold text-white truncate">Fablab Rwanda</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 truncate">Fabrication & Prototyping</p>
+                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Fabrication & Prototyping</p>
                   </div>
 
                   {/* Klab */}
                   <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-sky-400/60 transition-all group">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                        <span className="text-xs font-bold text-white truncate">Klab</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-sky-400 bg-sky-400/15 px-1.5 py-0.5 rounded shrink-0">
-                        32%
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0" />
+                      <span className="text-xs font-bold text-white truncate">Klab</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 truncate">Tech Innovation Space</p>
+                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Tech Innovation Space</p>
                   </div>
 
                   {/* Fab Cafe */}
                   <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-amber-400/60 transition-all group">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                        <span className="text-xs font-bold text-white truncate">Fab Cafe</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-400/15 px-1.5 py-0.5 rounded shrink-0">
-                        18%
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+                      <span className="text-xs font-bold text-white truncate">Fab Cafe</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 truncate">Collaborative Cafeteria</p>
+                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Collaborative Cafeteria</p>
                   </div>
 
                   {/* 250Startups */}
                   <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 hover:border-purple-400/60 transition-all group">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-                        <span className="text-xs font-bold text-white truncate">250Startups</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-400/15 px-1.5 py-0.5 rounded shrink-0">
-                        12%
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-purple-400 shrink-0" />
+                      <span className="text-xs font-bold text-white truncate">250Startups</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 truncate">Incubator & Startups Hub</p>
+                    <p className="text-[10px] text-slate-400 pl-4.5 truncate">Incubator & Startups Hub</p>
                   </div>
                 </div>
               </div>
@@ -405,24 +383,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               {/* Mobile / Tablet Partner Organizations Quick Strip */}
               <div className="lg:hidden pt-3 border-t border-slate-100 text-center">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Shared Facility Organizations
+                  Participating Organizations
                 </p>
                 <div className="grid grid-cols-2 gap-1.5 text-left">
-                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700 truncate">Fablab Rwanda</span>
-                    <span className="text-[9px] font-mono font-bold text-[#009A44]">38%</span>
+                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#E31B23] shrink-0" />
+                    <span className="text-[11px] font-bold text-slate-700 truncate">Fablab Rwanda</span>
                   </div>
-                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700 truncate">Klab</span>
-                    <span className="text-[9px] font-mono font-bold text-sky-500">32%</span>
+                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                    <span className="text-[11px] font-bold text-slate-700 truncate">Klab</span>
                   </div>
-                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700 truncate">Fab Cafe</span>
-                    <span className="text-[9px] font-mono font-bold text-amber-500">18%</span>
+                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    <span className="text-[11px] font-bold text-slate-700 truncate">Fab Cafe</span>
                   </div>
-                  <div className="px-2 py-1 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700 truncate">250Startups</span>
-                    <span className="text-[9px] font-mono font-bold text-purple-500">12%</span>
+                  <div className="px-2.5 py-1.5 bg-slate-50 border border-slate-200/80 rounded-lg flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
+                    <span className="text-[11px] font-bold text-slate-700 truncate">250Startups</span>
                   </div>
                 </div>
               </div>
