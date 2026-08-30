@@ -882,4 +882,492 @@ export class ExportService {
 
     doc.save(`${filename.replace(/\.pdf$/i, '')}_${new Date().toISOString().slice(0, 10)}.pdf`);
   }
+
+  /**
+   * Export Full Shared Expenses Dedicated PDF Report for Emmanuel Niyonzima
+   */
+  static exportFullSharedExpensesPDF(state: DatabaseState) {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const currentUser = state.currentUser;
+    const adminName = currentUser?.role === 'ADMIN' ? currentUser.name : 'Emmanuel Niyonzima (Super Administrator)';
+    const dateStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const dateShort = new Date().toISOString().slice(0, 10);
+
+    // 1. Top Navy Banner
+    doc.setFillColor(11, 25, 44);
+    doc.rect(0, 0, pageWidth, 38, 'F');
+
+    // Tri-color Rwandan flag stripe
+    doc.setFillColor(227, 27, 35);
+    doc.rect(0, 38, pageWidth * 0.33, 2.5, 'F');
+    doc.setFillColor(0, 154, 68);
+    doc.rect(pageWidth * 0.33, 38, pageWidth * 0.34, 2.5, 'F');
+    doc.setFillColor(15, 76, 129);
+    doc.rect(pageWidth * 0.67, 38, pageWidth * 0.33, 2.5, 'F');
+
+    // Logo
+    this.drawFabLabLogo(doc, 20, 19, 13);
+
+    // Banner Text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SHARED EXPENSES MANAGEMENT SYSTEM', 38, 14);
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(226, 232, 240);
+    doc.text('Telecom House Shared Facility (6th Floor) | Boulevard de l’Umuganda, Kacyiru, Kigali, Rwanda', 38, 20);
+    doc.text('Cost Sharing Key: Fablab Rwanda (38%) | Klab (32%) | Fab Cafe (18%) | 250Startups (12%)', 38, 25.5);
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Super Administrator: ${adminName} | Contact: niyonzimaemmanuel85@gmail.com | Currency: RWF`, 38, 31);
+
+    // Title Section
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SHARED FACILITY COST ALLOCATION & APPORTIONMENT REGISTER (FY 2026)', 14, 47);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Official Register Report | Generated: ${dateStr} | Prepared for: Emmanuel Niyonzima`, 14, 52);
+
+    // KPI Summary Metrics Bar
+    const totalAnnual = state.sharedExpenses.reduce((sum, e) => sum + e.annualAmount, 0);
+    const totalMonthly = state.sharedExpenses.reduce((sum, e) => sum + e.monthlyNormalizedAmount, 0);
+    const approvedCount = state.sharedExpenses.filter((e) => e.status === 'Posted' || e.status === 'Approved').length;
+    const pendingCount = state.sharedExpenses.filter((e) => e.status === 'Submitted').length;
+    const rejectedCount = state.sharedExpenses.filter((e) => e.status === 'Rejected').length;
+
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(14, 56, pageWidth - 28, 14, 2, 2, 'F');
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 41, 59);
+
+    const stats = [
+      { label: 'Total Annual Pool', value: FinancialCalculator.formatRWF(totalAnnual) },
+      { label: 'Monthly Normalized Cost', value: FinancialCalculator.formatRWF(totalMonthly) },
+      { label: 'Registered Expenses', value: `${state.sharedExpenses.length} Items` },
+      { label: 'Approved & Posted', value: `${approvedCount}` },
+      { label: 'Pending Emmanuel Review', value: `${pendingCount}` },
+      { label: 'Rejected / Revision', value: `${rejectedCount}` },
+    ];
+
+    let xCursor = 18;
+    const colStep = (pageWidth - 36) / stats.length;
+    stats.forEach((s, idx) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(s.label, xCursor, 61);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(15, 76, 129);
+      doc.text(s.value, xCursor, 66);
+      doc.setTextColor(30, 41, 59);
+      xCursor += colStep;
+    });
+
+    // Table Data Preparation
+    const headers = [
+      'ID',
+      'Date',
+      'Category & Description',
+      'Submitted By Dept',
+      'Dept Justification / Comment',
+      'Billing Freq',
+      'Total (RWF)',
+      'Monthly (RWF)',
+      'FabLab (38%)',
+      'kLab (32%)',
+      'FabCafe (18%)',
+      '250S (12%)',
+      'Status & Approver',
+    ];
+
+    const rows = state.sharedExpenses.map((e) => {
+      const fablab = e.allocations.find((a) => a.orgId === 'org-fablab')?.monthlyShare || 0;
+      const klab = e.allocations.find((a) => a.orgId === 'org-klab')?.monthlyShare || 0;
+      const fabcafe = e.allocations.find((a) => a.orgId === 'org-fabcafe')?.monthlyShare || 0;
+      const s250 = e.allocations.find((a) => a.orgId === 'org-250startups')?.monthlyShare || 0;
+
+      let statusDisplay = e.status;
+      if (e.approvedBy) {
+        statusDisplay += `\n(${e.approvedBy})`;
+      } else if (e.rejectionReason) {
+        statusDisplay += `\n(Reason: ${e.rejectionReason.slice(0, 25)}...)`;
+      }
+
+      return [
+        e.expenseNumber,
+        e.date,
+        `${e.category}\n${e.description}`,
+        e.submittedByOrgName || e.createdBy,
+        e.submitterComments ? `"${e.submitterComments.slice(0, 45)}..."` : 'N/A',
+        e.billingFrequency,
+        FinancialCalculator.formatRWF(e.totalAmount, false),
+        FinancialCalculator.formatRWF(e.monthlyNormalizedAmount, false),
+        FinancialCalculator.formatRWF(fablab, false),
+        FinancialCalculator.formatRWF(klab, false),
+        FinancialCalculator.formatRWF(fabcafe, false),
+        FinancialCalculator.formatRWF(s250, false),
+        statusDisplay,
+      ];
+    });
+
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 74,
+      margin: { left: 14, right: 14 },
+      styles: {
+        fontSize: 6.8,
+        cellPadding: 2,
+        textColor: [30, 41, 59],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.1,
+        overflow: 'linebreak',
+      },
+      headStyles: {
+        fillColor: [11, 25, 44],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 7.2,
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 18, fontStyle: 'bold' },
+        1: { cellWidth: 16 },
+        2: { cellWidth: 36, fontStyle: 'bold' },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 16 },
+        6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+        7: { cellWidth: 20, halign: 'right', textColor: [0, 125, 55], fontStyle: 'bold' },
+        8: { cellWidth: 17, halign: 'right' },
+        9: { cellWidth: 17, halign: 'right' },
+        10: { cellWidth: 17, halign: 'right' },
+        11: { cellWidth: 17, halign: 'right' },
+        12: { cellWidth: 22, halign: 'center' },
+      },
+      didDrawPage: (data) => {
+        const pageCount = (doc.internal as any).getNumberOfPages();
+        const pageCurrent = data.pageNumber;
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `Shared Expenses Management System - Document Ref: SEMS-EXP-2026 | Page ${pageCurrent} of ${pageCount}`,
+          14,
+          pageHeight - 6
+        );
+        doc.text(
+          'CERTIFIED & AUDITABLE FINANCIAL DOCUMENT | SIGNED BY EMMANUEL NIYONZIMA',
+          pageWidth - 14 - doc.getTextWidth('CERTIFIED & AUDITABLE FINANCIAL DOCUMENT | SIGNED BY EMMANUEL NIYONZIMA'),
+          pageHeight - 6
+        );
+      },
+    });
+
+    // Add Signature & Approval Block on final page
+    const finalY = (doc as any).lastAutoTable.finalY + 8;
+    if (finalY < pageHeight - 35) {
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(14, finalY, pageWidth - 28, 24, 2, 2, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(14, finalY, pageWidth - 28, 24, 2, 2, 'S');
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 23, 42);
+      doc.text('EXECUTIVE VERIFICATION & ADMINISTRATIVE CONFIRMATION', 18, finalY + 6);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      doc.text(
+        'I hereby certify that the shared facility expenses registered above have been reviewed, verified against invoices, and apportioned across resident organizations according to agreed floor space & usage allocations.',
+        18,
+        finalY + 11
+      );
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 76, 129);
+      doc.text('Certified By: Emmanuel Niyonzima', 18, finalY + 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text('Super Administrator & Lead Architect | FabLab Rwanda & Telecom House Facility', 18, finalY + 22);
+
+      doc.text('Signature & Official Stamp: ____________________________________', pageWidth - 120, finalY + 18);
+      doc.text(`Date Verified: ${dateShort}`, pageWidth - 120, finalY + 22);
+    }
+
+    doc.save(`SEMS_Shared_Expenses_Full_Report_${dateShort}.pdf`);
+  }
+
+  /**
+   * Export Full Shared Expenses Dedicated Excel Workbook for Emmanuel Niyonzima
+   */
+  static exportFullSharedExpensesExcel(state: DatabaseState) {
+    const wb = XLSX.utils.book_new();
+    const dateStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const dateShort = new Date().toISOString().slice(0, 10);
+    const currentUser = state.currentUser;
+    const adminName = currentUser?.role === 'ADMIN' ? currentUser.name : 'Emmanuel Niyonzima';
+
+    const totalAnnual = state.sharedExpenses.reduce((sum, e) => sum + e.annualAmount, 0);
+    const totalMonthly = state.sharedExpenses.reduce((sum, e) => sum + e.monthlyNormalizedAmount, 0);
+
+    // ==========================================
+    // SHEET 1: SHARED EXPENSES REGISTER
+    // ==========================================
+    const regSheetData: (any)[][] = [
+      ['SHARED EXPENSES MANAGEMENT SYSTEM'],
+      ['Telecom House Shared Facility (6th Floor) | Boulevard de l’Umuganda, Kacyiru, Kigali, Rwanda'],
+      ['OFFICIAL SHARED FACILITY EXPENSES & MULTI-ORGANIZATION ALLOCATION REGISTER - FY 2026'],
+      [`Generated Date: ${dateStr} | Prepared for Administrator: ${adminName} | Currency: RWF`],
+      [],
+      ['1. EXECUTIVE POOL SUMMARY'],
+      ['Total Annual Shared Facility Budget (RWF)', totalAnnual, 'Approved & apportioned annual facility pool across 4 entities'],
+      ['Monthly Normalized Operating Requirement (RWF)', totalMonthly, 'Monthly cash flow requirement to sustain Telecom House 6th Fl'],
+      ['Total Registered Items', state.sharedExpenses.length, 'Total facility line items registered in SEMS database'],
+      [],
+      ['2. DETAILED EXPENSE REGISTER & APPORTIONMENT BREAKDOWN'],
+      [
+        'Expense ID',
+        'Date',
+        'Category',
+        'Account Code',
+        'Description',
+        'Submitted By Department',
+        'Submitter Justification / Comments',
+        'Billing Frequency',
+        'Total Expense Amount (RWF)',
+        'Monthly Normalized Cost (RWF)',
+        'FabLab Rwanda Share (38%)',
+        'kLab Share (32%)',
+        'Fab Cafe Share (18%)',
+        '250Startups Share (12%)',
+        'Status',
+        'Approved By / Rejected By',
+        'Approval / Rejection Remarks',
+        'Invoice Attachment Ref',
+      ],
+    ];
+
+    const dataStartRow = regSheetData.length + 1; // 1-indexed for Excel formulas
+    state.sharedExpenses.forEach((exp) => {
+      const fablab = exp.allocations.find((a) => a.orgId === 'org-fablab')?.monthlyShare || 0;
+      const klab = exp.allocations.find((a) => a.orgId === 'org-klab')?.monthlyShare || 0;
+      const fabcafe = exp.allocations.find((a) => a.orgId === 'org-fabcafe')?.monthlyShare || 0;
+      const s250 = exp.allocations.find((a) => a.orgId === 'org-250startups')?.monthlyShare || 0;
+
+      regSheetData.push([
+        exp.expenseNumber,
+        exp.date,
+        exp.category,
+        exp.accountCode || '6000',
+        exp.description,
+        exp.submittedByOrgName || exp.createdBy,
+        exp.submitterComments || 'Incurred for facility operations.',
+        exp.billingFrequency,
+        exp.totalAmount,
+        exp.monthlyNormalizedAmount,
+        fablab,
+        klab,
+        fabcafe,
+        s250,
+        exp.status,
+        exp.approvedBy || (exp.status === 'Rejected' ? 'Emmanuel Niyonzima (Rejected)' : 'Awaiting Emmanuel Approval'),
+        exp.adminRemarks || exp.rejectionReason || 'None',
+        exp.supportingDocName || 'Invoice_Attached.pdf',
+      ]);
+    });
+    const dataEndRow = regSheetData.length;
+
+    // Add Totals Row with Excel Formulas
+    regSheetData.push([
+      'TOTAL ALLOCATIONS',
+      '',
+      '',
+      '',
+      'SUM OF ALL SHARED EXPENSES',
+      '',
+      '',
+      '',
+      `=SUM(I${dataStartRow}:I${dataEndRow})`,
+      `=SUM(J${dataStartRow}:J${dataEndRow})`,
+      `=SUM(K${dataStartRow}:K${dataEndRow})`,
+      `=SUM(L${dataStartRow}:L${dataEndRow})`,
+      `=SUM(M${dataStartRow}:M${dataEndRow})`,
+      `=SUM(N${dataStartRow}:N${dataEndRow})`,
+      '100% RECONCILED',
+      'EMMANUEL NIYONZIMA',
+      'AUDITED',
+      '',
+    ]);
+
+    const wsReg = XLSX.utils.aoa_to_sheet(regSheetData);
+    wsReg['!cols'] = [
+      { wch: 16 }, // Expense ID
+      { wch: 13 }, // Date
+      { wch: 18 }, // Category
+      { wch: 14 }, // Account Code
+      { wch: 38 }, // Description
+      { wch: 24 }, // Submitted By Dept
+      { wch: 36 }, // Justification
+      { wch: 16 }, // Billing Freq
+      { wch: 22 }, // Total Amount
+      { wch: 22 }, // Monthly Normalized
+      { wch: 20 }, // Fablab
+      { wch: 20 }, // kLab
+      { wch: 20 }, // Fab Cafe
+      { wch: 20 }, // 250Startups
+      { wch: 14 }, // Status
+      { wch: 26 }, // Approved By
+      { wch: 34 }, // Remarks
+      { wch: 22 }, // Invoice Ref
+    ];
+    wsReg['!views'] = [{ state: 'frozen', ySplit: 11 }];
+    XLSX.utils.book_append_sheet(wb, wsReg, 'Shared Expenses');
+
+    // ==========================================
+    // SHEET 2: DEPARTMENT APPORTIONMENT SUMMARY
+    // ==========================================
+    const deptSheetData: (any)[][] = [
+      ['SHARED EXPENSES MANAGEMENT SYSTEM'],
+      ['DEPARTMENTAL COST ALLOCATION & SETTLEMENT SCHEDULE - FY 2026'],
+      [`Generated Date: ${dateStr} | Reporting Administrator: ${adminName}`],
+      [],
+      [
+        'Organization / Department',
+        'Org Code',
+        'Floor Area (sqm)',
+        'Staff Headcount',
+        'Cost Share %',
+        'Annual Allocated Share (RWF)',
+        'Monthly Normalized Due (RWF)',
+        'YTD Contributions Received (RWF)',
+        'Net Outstanding Due (RWF)',
+        'Settlement Status',
+      ],
+    ];
+
+    const sharedSummary = AccountingService.getSharedSpaceSummary(state);
+    const dStart = deptSheetData.length + 1;
+    state.organizations.forEach((org) => {
+      const summary = sharedSummary.orgSummaries.find((s) => s.orgId === org.id);
+      const annualAlloc = summary ? summary.annualAmount : 0;
+      const monthlyAlloc = summary ? summary.monthlyAmount : 0;
+      const paid = summary ? summary.totalPaidYTD : 0;
+      const due = summary ? summary.outstandingBalance : 0;
+
+      deptSheetData.push([
+        org.name,
+        org.code,
+        org.floorAreaSqM,
+        org.headcount,
+        summary ? Number((summary.percentageOfTotal / 100).toFixed(4)) : 0,
+        annualAlloc,
+        monthlyAlloc,
+        paid,
+        due,
+        due <= 0 ? 'CURRENT / PAID' : 'OUTSTANDING DUES',
+      ]);
+    });
+    const dEnd = deptSheetData.length;
+
+    deptSheetData.push([
+      'TOTAL APPORTIONMENT (100%)',
+      'TOTAL',
+      `=SUM(C${dStart}:C${dEnd})`,
+      `=SUM(D${dStart}:D${dEnd})`,
+      `=SUM(E${dStart}:E${dEnd})`,
+      `=SUM(F${dStart}:F${dEnd})`,
+      `=SUM(G${dStart}:G${dEnd})`,
+      `=SUM(H${dStart}:H${dEnd})`,
+      `=SUM(I${dStart}:I${dEnd})`,
+      '100% RECONCILED',
+    ]);
+
+    const wsDept = XLSX.utils.aoa_to_sheet(deptSheetData);
+    wsDept['!cols'] = [
+      { wch: 28 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 14 },
+      { wch: 24 },
+      { wch: 24 },
+      { wch: 26 },
+      { wch: 24 },
+      { wch: 18 },
+    ];
+    wsDept['!views'] = [{ state: 'frozen', ySplit: 4 }];
+    XLSX.utils.book_append_sheet(wb, wsDept, 'Department Summary');
+
+    // ==========================================
+    // SHEET 3: CATEGORY BREAKDOWN
+    // ==========================================
+    const catSheetData: (any)[][] = [
+      ['SHARED EXPENSES MANAGEMENT SYSTEM'],
+      ['FACILITY COST BREAKDOWN BY EXPENSE CATEGORY - FY 2026'],
+      [`Generated Date: ${dateStr}`],
+      [],
+      ['Expense Category', 'Number of Items', 'Annual Amount (RWF)', 'Monthly Amount (RWF)', '% of Total Facility Pool'],
+    ];
+
+    const catMap = new Map<string, { count: number; annual: number; monthly: number }>();
+    state.sharedExpenses.forEach((e) => {
+      const existing = catMap.get(e.category) || { count: 0, annual: 0, monthly: 0 };
+      existing.count += 1;
+      existing.annual += e.annualAmount;
+      existing.monthly += e.monthlyNormalizedAmount;
+      catMap.set(e.category, existing);
+    });
+
+    const catStart = catSheetData.length + 1;
+    catMap.forEach((v, k) => {
+      catSheetData.push([
+        k,
+        v.count,
+        v.annual,
+        v.monthly,
+        totalAnnual > 0 ? Number((v.annual / totalAnnual).toFixed(4)) : 0,
+      ]);
+    });
+    const catEnd = catSheetData.length;
+
+    catSheetData.push([
+      'TOTAL CATEGORY POOL',
+      `=SUM(B${catStart}:B${catEnd})`,
+      `=SUM(C${catStart}:C${catEnd})`,
+      `=SUM(D${catStart}:D${catEnd})`,
+      `=SUM(E${catStart}:E${catEnd})`,
+    ]);
+
+    const wsCat = XLSX.utils.aoa_to_sheet(catSheetData);
+    wsCat['!cols'] = [
+      { wch: 28 },
+      { wch: 16 },
+      { wch: 24 },
+      { wch: 24 },
+      { wch: 20 },
+    ];
+    wsCat['!views'] = [{ state: 'frozen', ySplit: 4 }];
+    XLSX.utils.book_append_sheet(wb, wsCat, 'Category Breakdown');
+
+    // Write file
+    const finalFileName = `SEMS_Shared_Expenses_Official_Workbook_${dateShort}.xlsx`;
+    XLSX.writeFile(wb, finalFileName);
+  }
 }
+

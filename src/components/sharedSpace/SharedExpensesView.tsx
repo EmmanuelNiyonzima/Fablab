@@ -20,7 +20,11 @@ import {
   ShieldCheck,
   FileCheck,
   CornerDownRight,
-  UserCheck
+  UserCheck,
+  Ban,
+  RotateCcw,
+  Paperclip,
+  Info
 } from 'lucide-react';
 import { SearchFilterBar } from '../common/SearchFilterBar';
 import { StatusBadge, Badge } from '../common/Badge';
@@ -44,19 +48,20 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
   const isAdmin = currentUser.role === 'ADMIN';
   const sharedExpenses = state.sharedExpenses;
 
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'my_submissions'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'my_submissions'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(isAddModalOpen);
   const [viewExpense, setViewExpense] = useState<SharedExpense | null>(null);
 
-  // Approval / Revision modal state
+  // Approval / Revision / Rejection modal state
   const [actionExpense, setActionExpense] = useState<SharedExpense | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'revision' | 'reject' | null>(null);
   const [adminRemarks, setAdminRemarks] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
 
-  // Form State
+  // Form State for Submitting Shared Expense
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('Electricity');
@@ -85,13 +90,17 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
     state.organizations
   );
 
-  // Pending Submissions for Emmanuel
+  // Counts for tabs
   const pendingSubmissions = sharedExpenses.filter((exp) => exp.status === 'Submitted');
+  const approvedExpenses = sharedExpenses.filter((exp) => exp.status === 'Posted' || exp.status === 'Approved');
+  const rejectedExpenses = sharedExpenses.filter((exp) => exp.status === 'Rejected');
 
   // Filtered List
   const filteredExpenses = sharedExpenses.filter((exp) => {
     // Tab Filter
     if (activeTab === 'pending' && exp.status !== 'Submitted') return false;
+    if (activeTab === 'approved' && exp.status !== 'Posted' && exp.status !== 'Approved') return false;
+    if (activeTab === 'rejected' && exp.status !== 'Rejected') return false;
     if (activeTab === 'my_submissions') {
       const isMyOrg = currentUser.organizationId && exp.submittedByOrgId === currentUser.organizationId;
       const isMyEmail = exp.submittedByEmail === currentUser.email || exp.createdBy === currentUser.name;
@@ -103,7 +112,8 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
       exp.expenseNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exp.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exp.submittedByOrgName && exp.submittedByOrgName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (exp.submitterComments && exp.submitterComments.toLowerCase().includes(searchQuery.toLowerCase()));
+      (exp.submitterComments && exp.submitterComments.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (exp.rejectionReason && exp.rejectionReason.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCat = categoryFilter === 'all' || exp.category === categoryFilter;
     const matchesFreq = frequencyFilter === 'all' || exp.billingFrequency === frequencyFilter;
@@ -125,6 +135,11 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
       return;
     }
 
+    if (!formSubmitterComments.trim()) {
+      alert('Please provide a comment or operational justification for this department expense.');
+      return;
+    }
+
     if (!calculatedAllocations.isReconciled) {
       alert(calculatedAllocations.errorMessage || 'Allocation percentages must equal 100% and balance to total expense.');
       return;
@@ -132,8 +147,8 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
 
     const selectedOrg = state.organizations.find((o) => o.id === formSelectedOrgId);
 
-    // If Admin is submitting, they can immediately post or choose status. If department user submits, it is sent to Administrator as 'Submitted'.
-    const finalStatus: TransactionStatus = isAdmin ? 'Posted' : 'Submitted';
+    // If Admin is submitting on behalf of a dept, it still creates a structured submission (or directly posts if chosen)
+    const finalStatus: TransactionStatus = 'Submitted';
 
     storageService.addSharedExpense({
       date: formDate,
@@ -164,19 +179,24 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
     setFormUnitPrice(1000000);
     setFormNotes('');
     setFormSubmitterComments('');
+    setFormDocName('');
   };
 
   const handleAdminApprovalConfirm = () => {
     if (!actionExpense) return;
 
     if (actionType === 'approve') {
-      storageService.approveSharedExpense(actionExpense.id, adminRemarks || 'Approved by Emmanuel Niyonzima (Administrator)');
+      storageService.approveSharedExpense(
+        actionExpense.id, 
+        adminRemarks || 'Approved and confirmed by Emmanuel Niyonzima (Super Administrator).'
+      );
     } else if (actionType === 'reject') {
-      if (!adminRemarks.trim()) {
-        alert('Please provide a reason for rejecting this shared expense submission.');
+      const reasonToSave = rejectionReason.trim() || adminRemarks.trim();
+      if (!reasonToSave) {
+        alert('Please provide a specific reason for rejecting this shared expense submission.');
         return;
       }
-      storageService.rejectSharedExpense(actionExpense.id, adminRemarks);
+      storageService.rejectSharedExpense(actionExpense.id, reasonToSave);
     } else if (actionType === 'revision') {
       if (!adminRemarks.trim()) {
         alert('Please specify the revision requirements for the department.');
@@ -188,105 +208,56 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
     setActionExpense(null);
     setActionType(null);
     setAdminRemarks('');
+    setRejectionReason('');
   };
 
-  const handleExportExcel = () => {
-    const headers = [
-      'Expense ID',
-      'Date',
-      'Description',
-      'Category',
-      'Submitted By Dept',
-      'Submitter Comments / Justification',
-      'Billing Freq',
-      'Total Amount (RWF)',
-      'Monthly Normalized (RWF)',
-      'Fablab Share 38% (RWF)',
-      'Klab Share 32% (RWF)',
-      'Fab Cafe Share 18% (RWF)',
-      '250Startups Share 12% (RWF)',
-      'Status',
-      'Admin Approved By',
-      'Admin Remarks',
-    ];
-
-    const rows = filteredExpenses.map((exp) => {
-      const fablab = exp.allocations.find((a) => a.orgId === 'org-fablab')?.monthlyShare || 0;
-      const klab = exp.allocations.find((a) => a.orgId === 'org-klab')?.monthlyShare || 0;
-      const fabcafe = exp.allocations.find((a) => a.orgId === 'org-fabcafe')?.monthlyShare || 0;
-      const s250 = exp.allocations.find((a) => a.orgId === 'org-250startups')?.monthlyShare || 0;
-
-      return [
-        exp.expenseNumber,
-        exp.date,
-        exp.description,
-        exp.category,
-        exp.submittedByOrgName || exp.createdBy,
-        exp.submitterComments || exp.notes || 'N/A',
-        exp.billingFrequency,
-        exp.totalAmount,
-        exp.monthlyNormalizedAmount,
-        fablab,
-        klab,
-        fabcafe,
-        s250,
-        exp.status,
-        exp.approvedBy || 'Pending Emmanuel Approval',
-        exp.adminRemarks || 'None',
-      ];
-    });
-
-    ExportService.exportToExcel('Shared Expenses Management & Allocation Register', 'Shared_Expenses_Register', headers, rows, [
-      { label: 'Total Annual Shared Facility Budget', value: FinancialCalculator.formatRWF(totalAnnual) },
-      { label: 'Total Monthly Normalized Requirement', value: FinancialCalculator.formatRWF(totalMonthlyNormalized) },
-      { label: 'Pending Department Submissions', value: pendingSubmissions.length },
-    ]);
+  const handleDownloadFullPDF = () => {
+    ExportService.exportFullSharedExpensesPDF(state);
   };
 
-  const handleExportPDF = () => {
-    const headers = ['Expense #', 'Category', 'Description', 'Submitted By', 'Total (RWF)', 'Monthly Accrual', 'Status'];
-    const rows = filteredExpenses.map((e) => [
-      e.expenseNumber,
-      e.category,
-      e.description,
-      e.submittedByOrgName || 'FabLab Core',
-      FinancialCalculator.formatRWF(e.totalAmount, false),
-      FinancialCalculator.formatRWF(e.monthlyNormalizedAmount, false),
-      e.status,
-    ]);
-
-    ExportService.exportToPDF('Shared Expenses Management System - Facility Register', 'Shared_Expenses_Report', headers, rows, {
-      orientation: 'landscape',
-      generatedBy: `${currentUser.name} (${currentUser.department})`,
-      summaryStats: [
-        { label: 'Total Annual Budget', value: FinancialCalculator.formatRWF(totalAnnual) },
-        { label: 'Monthly Normalized Cost', value: FinancialCalculator.formatRWF(totalMonthlyNormalized) },
-        { label: 'Pending Approvals', value: `${pendingSubmissions.length} items` },
-      ],
-    });
+  const handleDownloadFullExcel = () => {
+    ExportService.exportFullSharedExpensesExcel(state);
   };
+
+  const rejectionPresetReasons = [
+    'Official EBM tax invoice / receipt is missing or illegible.',
+    'Incorrect cost allocation category selected.',
+    'Duplicate submission for current billing cycle.',
+    'Exceeds approved quarterly budget ceiling without prior authorization.',
+    'Discrepancy in unit price or quantity vs attached vendor bill.',
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Banner with Financial Overview */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Top Banner with Financial Overview & Role-Specific Primary Actions */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Shared Expenses Management</h2>
             <Badge variant="emerald">Multi-Department</Badge>
             {pendingSubmissions.length > 0 && (
-              <Badge variant="amber">{pendingSubmissions.length} Pending Confirmation</Badge>
+              <Badge variant="amber">
+                <Clock className="w-3 h-3 mr-1" />
+                {pendingSubmissions.length} Awaiting Emmanuel Approval
+              </Badge>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Cost sharing management across <strong>Fablab Rwanda (38%)</strong>, <strong>Klab (32%)</strong>, <strong>Fab Cafe (18%)</strong>, and <strong>250Startups (12%)</strong>.
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+            Cost sharing management across <strong>Fablab Rwanda (38%)</strong>, <strong>Klab (32%)</strong>, <strong>Fab Cafe (18%)</strong>, and <strong>250Startups (12%)</strong> at Telecom House 6th Floor.
           </p>
+          <div className="mt-2.5 flex items-center gap-2 text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 inline-flex">
+            <Info className="w-3.5 h-3.5 text-[#0F4C81] shrink-0" />
+            <span>
+              <strong>Workflow Protocol:</strong> Shared expenses are initiated by resident departments with receipts and submitted to <strong>Emmanuel Niyonzima</strong> for administrative approval before posting.
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
+        {/* Top Metric Cards + Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3.5 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-xl">
             <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Total Annual Budget</p>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Total Annual Pool</p>
               <p className="text-base font-bold text-slate-900 font-mono">{FinancialCalculator.formatRWF(totalAnnual)}</p>
             </div>
             <div className="h-7 w-px bg-slate-200" />
@@ -296,83 +267,134 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#009A44] hover:bg-[#007D37] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Submit Shared Expense</span>
-          </button>
+          {/* Role-Adaptive Primary Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Download Full PDF Document */}
+            <button
+              type="button"
+              onClick={handleDownloadFullPDF}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+              title="Download Full Formatted PDF Report with Logos & Approval Sign-off"
+            >
+              <FileText className="w-4 h-4 text-emerald-400" />
+              <span>Full PDF Document</span>
+            </button>
+
+            {/* Download Full Excel Workbook */}
+            <button
+              type="button"
+              onClick={handleDownloadFullExcel}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#0F4C81] hover:bg-[#0A3962] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+              title="Download Comprehensive Excel Workbook with formulas and department summaries"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+              <span>Excel Workbook (.xlsx)</span>
+            </button>
+
+            {/* Department Submit Expense Button */}
+            {!isAdmin ? (
+              <button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#009A44] hover:bg-[#007D37] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Submit Department Expense</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shrink-0 border border-slate-200"
+                title="Submit on behalf of a department (Simulation / Admin Entry)"
+              >
+                <Plus className="w-3.5 h-3.5 text-slate-500" />
+                <span>Submit for Dept</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* PENDING APPROVALS QUEUE (Highlight for Emmanuel / Administrator) */}
+      {/* PENDING APPROVALS QUEUE (Highlight for Emmanuel Niyonzima / Administrator) */}
       {pendingSubmissions.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs">
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/80 rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500 text-white shadow-xs">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span>Direct Submissions for Administrator Confirmation</span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold">
-                    {pendingSubmissions.length} Pending
+                  <span>Department Submissions Awaiting Emmanuel's Review</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold">
+                    {pendingSubmissions.length} Pending Approval
                   </span>
                 </h3>
                 <p className="text-xs text-slate-600">
-                  Organizations have submitted shared expenses for Emmanuel's review and approval before posting to General Ledger.
+                  Resident organizations have submitted shared expenses with justifications. Review and Approve or Reject with reason before posting to General Ledger.
                 </p>
               </div>
             </div>
 
             {isAdmin && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+              <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-auto">
                 <ShieldCheck className="w-4 h-4 text-[#009A44]" />
-                <span className="font-semibold">Logged in as Administrator (Emmanuel)</span>
+                <span className="font-semibold">Reviewing as Emmanuel Niyonzima (Super Administrator)</span>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
             {pendingSubmissions.map((exp) => (
               <div
                 key={exp.id}
-                className="bg-white border border-amber-200 rounded-xl p-4 shadow-xs space-y-3 hover:border-amber-400 transition-all"
+                className="bg-white border border-amber-200/90 rounded-xl p-4 shadow-xs space-y-3 hover:border-amber-400 transition-all"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-mono text-[10px] font-bold">
                         {exp.expenseNumber}
                       </span>
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md text-[10px] font-bold">
+                      <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-md text-[10px] font-bold flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-amber-700" />
                         {exp.submittedByOrgName || exp.createdBy}
                       </span>
                       <span className="text-[10px] text-slate-400">{exp.date}</span>
                     </div>
                     <h4 className="font-bold text-slate-900 text-xs mt-1.5">{exp.description}</h4>
+                    <span className="text-[10px] font-semibold text-emerald-700">{exp.category}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Amount</span>
                     <span className="font-mono font-bold text-slate-900 text-xs">
                       {FinancialCalculator.formatRWF(exp.totalAmount)}
                     </span>
+                    <span className="text-[10px] text-emerald-700 block font-mono">
+                      ~{FinancialCalculator.formatRWF(exp.monthlyNormalizedAmount)}/mo
+                    </span>
                   </div>
                 </div>
 
-                {/* Submitter Comment Box */}
+                {/* Submitter Department Justification Box */}
                 {exp.submitterComments && (
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 flex items-start gap-2">
+                  <div className="p-2.5 bg-amber-50/70 border border-amber-200/70 rounded-lg text-xs text-slate-700 flex items-start gap-2">
                     <MessageSquare className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-[11px] text-slate-900 block font-semibold">
-                        Department Comment / Justification:
+                      <strong className="text-[11px] text-amber-900 block font-semibold">
+                        Department Justification for Emmanuel:
                       </strong>
-                      <p className="text-[11px] text-slate-600 mt-0.5">{exp.submitterComments}</p>
+                      <p className="text-[11px] text-slate-700 mt-0.5 italic">"{exp.submitterComments}"</p>
                     </div>
+                  </div>
+                )}
+
+                {/* Invoice Attachment indicator */}
+                {exp.supportingDocName && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                    <Paperclip className="w-3 h-3 text-slate-400" />
+                    <span className="font-mono truncate">{exp.supportingDocName}</span>
                   </div>
                 )}
 
@@ -380,7 +402,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 <div className="grid grid-cols-4 gap-1 text-[10px] bg-slate-50/80 p-2 rounded-lg border border-slate-100">
                   {exp.allocations.map((a) => (
                     <div key={a.orgId} className="text-center">
-                      <span className="text-slate-500 truncate block">{a.orgName.split(' ')[0]} ({a.percentage}%)</span>
+                      <span className="text-slate-500 truncate block text-[9px]">{a.orgName.split(' ')[0]} ({a.percentage}%)</span>
                       <span className="font-mono font-bold text-slate-800 text-[10px]">
                         {FinancialCalculator.formatRWF(a.monthlyShare, false)}
                       </span>
@@ -388,7 +410,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                   ))}
                 </div>
 
-                {/* Action Buttons for Emmanuel */}
+                {/* Action Buttons: Emmanuel Review Actions */}
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                   <button
                     type="button"
@@ -396,7 +418,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                     className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>View Breakdown</span>
+                    <span>View Matrix</span>
                   </button>
 
                   <div className="flex items-center gap-1.5">
@@ -406,29 +428,45 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                           type="button"
                           onClick={() => {
                             setActionExpense(exp);
+                            setActionType('reject');
+                            setRejectionReason('');
+                            setAdminRemarks('');
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Reject submission and provide a reason to the department"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>Reject</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActionExpense(exp);
                             setActionType('revision');
                             setAdminRemarks('');
                           }}
-                          className="px-2.5 py-1 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                          className="px-2 py-1 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 transition-colors cursor-pointer"
+                          title="Ask department to revise numbers or attach receipt"
                         >
-                          Request Revision
+                          Revision
                         </button>
                         <button
                           type="button"
                           onClick={() => {
                             setActionExpense(exp);
                             setActionType('approve');
-                            setAdminRemarks('Approved and confirmed by Administrator for shared facility cost allocation.');
+                            setAdminRemarks('Approved and confirmed by Emmanuel Niyonzima (Administrator) for shared facility cost allocation.');
                           }}
                           className="px-3 py-1 text-[11px] font-bold text-white bg-[#009A44] hover:bg-[#007D37] rounded-lg shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <Check className="w-3.5 h-3.5" />
-                          <span>Confirm & Post</span>
+                          <span>Approve & Post</span>
                         </button>
                       </>
                     ) : (
-                      <span className="text-[11px] text-amber-700 font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
-                        Awaiting Emmanuel's Confirmation
+                      <span className="text-[11px] text-amber-700 font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        <span>Awaiting Emmanuel's Approval</span>
                       </span>
                     )}
                   </div>
@@ -440,8 +478,8 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
       )}
 
       {/* Tabs Switcher */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setActiveTab('all')}
@@ -464,7 +502,31 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Pending Submissions ({pendingSubmissions.length})</span>
+            <span>Pending Review ({pendingSubmissions.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('approved')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'approved'
+                ? 'bg-[#009A44] text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Approved & Posted ({approvedExpenses.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rejected')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'rejected'
+                ? 'bg-rose-700 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Ban className="w-3.5 h-3.5" />
+            <span>Rejected ({rejectedExpenses.length})</span>
           </button>
           <button
             type="button"
@@ -476,7 +538,28 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>{currentUser.organizationName || 'My Department'} Expenses</span>
+            <span>{currentUser.organizationName || 'My Department'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadFullExcel}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            title="Export full register to Excel"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export Excel</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadFullPDF}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            title="Export full register to PDF"
+          >
+            <FileText className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export PDF</span>
           </button>
         </div>
       </div>
@@ -485,7 +568,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
       <SearchFilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search description, category, department, comments..."
+        searchPlaceholder="Search description, category, department, comments, rejection reason..."
         filters={[
           {
             label: 'Category',
@@ -509,10 +592,10 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             ],
           },
         ]}
-        onExportExcel={handleExportExcel}
-        onExportPDF={handleExportPDF}
+        onExportExcel={handleDownloadFullExcel}
+        onExportPDF={handleDownloadFullPDF}
         onAddClick={() => setShowAddModal(true)}
-        addLabel="Submit Shared Expense"
+        addLabel={isAdmin ? "Submit for Dept" : "Submit Department Expense"}
       />
 
       {/* Shared Expenses Data Table */}
@@ -524,7 +607,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 <th className="py-3.5 px-4">Expense ID</th>
                 <th className="py-3.5 px-4">Date</th>
                 <th className="py-3.5 px-4">Category & Description</th>
-                <th className="py-3.5 px-4">Submitted By</th>
+                <th className="py-3.5 px-4">Submitted By Dept</th>
                 <th className="py-3.5 px-4 text-center">Frequency</th>
                 <th className="py-3.5 px-4 text-right">Total Amount</th>
                 <th className="py-3.5 px-4 text-right">Monthly Normalized</th>
@@ -552,8 +635,14 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                         <span className="font-mono text-slate-400">Acc {exp.accountCode}</span>
                       </div>
                       {exp.submitterComments && (
-                        <div className="text-[10px] text-slate-500 italic mt-1 truncate max-w-xs">
-                          "{exp.submitterComments}"
+                        <div className="text-[10px] text-slate-500 italic mt-1 truncate max-w-xs flex items-center gap-1">
+                          <MessageSquare className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                          <span>"{exp.submitterComments}"</span>
+                        </div>
+                      )}
+                      {exp.status === 'Rejected' && exp.rejectionReason && (
+                        <div className="mt-1 p-1.5 bg-rose-50 border border-rose-200 rounded text-[10px] text-rose-800">
+                          <strong>Rejection Reason:</strong> {exp.rejectionReason}
                         </div>
                       )}
                     </td>
@@ -562,7 +651,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                         {exp.submittedByOrgName || exp.createdBy}
                       </span>
                       <span className="text-[10px] text-slate-400 truncate block">
-                        {exp.submittedByEmail || 'Core System'}
+                        {exp.submittedByEmail || 'Department'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -593,24 +682,42 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                         <button
                           type="button"
                           onClick={() => setViewExpense(exp)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                          title="View Allocation Matrix"
                         >
                           <Eye className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Details</span>
+                          <span className="hidden sm:inline">Details</span>
                         </button>
+                        
+                        {/* Direct Approve / Reject for Emmanuel on Submitted items */}
                         {isAdmin && exp.status === 'Submitted' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActionExpense(exp);
-                              setActionType('approve');
-                              setAdminRemarks('Approved and confirmed by Administrator.');
-                            }}
-                            className="p-1 text-white bg-[#009A44] hover:bg-[#007D37] rounded-lg shadow-xs cursor-pointer"
-                            title="Confirm & Post"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionExpense(exp);
+                                setActionType('approve');
+                                setAdminRemarks('Approved and confirmed by Emmanuel Niyonzima (Administrator).');
+                              }}
+                              className="p-1.5 text-white bg-[#009A44] hover:bg-[#007D37] rounded-lg shadow-xs cursor-pointer"
+                              title="Approve & Post to General Ledger"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionExpense(exp);
+                                setActionType('reject');
+                                setRejectionReason('');
+                                setAdminRemarks('');
+                              }}
+                              className="p-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer"
+                              title="Reject submission with reason"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -622,7 +729,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
         </div>
       </div>
 
-      {/* Add / Submit Shared Expense Modal */}
+      {/* SUBMIT DEPARTMENT SHARED EXPENSE MODAL */}
       {showAddModal && (
         <Modal
           isOpen={showAddModal}
@@ -630,12 +737,8 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             setShowAddModal(false);
             if (onCloseAddModal) onCloseAddModal();
           }}
-          title="Submit Shared Facility Expense"
-          subtitle={
-            isAdmin
-              ? 'Record and immediately post a shared facility expense to the general ledger.'
-              : 'Submit an incurred shared expense with justification for confirmation by Administrator Emmanuel.'
-          }
+          title="Submit Department Shared Facility Expense"
+          subtitle="Resident departments submit incurred shared facility expenses with justification and invoice for Super Administrator Emmanuel Niyonzima's review and approval."
           maxWidth="3xl"
           footer={
             <div className="flex items-center justify-between w-full">
@@ -662,7 +765,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                   className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-[#009A44] hover:bg-[#007D37] rounded-xl shadow-md transition-colors cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isAdmin ? 'Save & Post to Ledger' : 'Send to Emmanuel (Administrator)'}</span>
+                  <span>Submit to Emmanuel for Approval</span>
                 </button>
               </div>
             </div>
@@ -673,7 +776,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             <div className="p-3 bg-[#E8F8EE] border border-[#A7E7BF] rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-[#009A44]" />
-                <span className="font-bold text-[#007D37]">Submitting Department:</span>
+                <span className="font-bold text-[#007D37]">Submitting Department / Organization:</span>
               </div>
               <select
                 value={formSelectedOrgId}
@@ -690,7 +793,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Expense Date *</label>
+                <label className="text-xs font-semibold text-slate-700">Expense Incurred Date *</label>
                 <input
                   type="date"
                   required
@@ -701,7 +804,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Category *</label>
+                <label className="text-xs font-semibold text-slate-700">Expense Category *</label>
                 <select
                   value={formCategory}
                   onChange={(e) => {
@@ -763,13 +866,14 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
-                <span>Department Comment & Justification (Sent directly to Emmanuel) *</span>
+                <span>Department Operational Justification (Sent directly to Emmanuel) *</span>
               </label>
               <textarea
                 rows={2}
+                required
                 value={formSubmitterComments}
                 onChange={(e) => setFormSubmitterComments(e.target.value)}
-                placeholder="Please describe why this shared expense was incurred (e.g. monthly utility bill, equipment repair, or shared consumables for the 6th floor space)..."
+                placeholder="Explain why this shared cost was incurred and how it benefits the 4 entities on 6th floor..."
                 className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
@@ -866,13 +970,13 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                   type="text"
                   value={formDocName}
                   onChange={(e) => setFormDocName(e.target.value)}
-                  placeholder="e.g. Invoice_Receipt_Aug2026.pdf"
+                  placeholder="e.g. Liquid_Invoice_Aug2026.pdf"
                   className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">General Notes</label>
+                <label className="text-xs font-semibold text-slate-700">General Operational Notes</label>
                 <input
                   type="text"
                   value={formNotes}
@@ -886,7 +990,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
         </Modal>
       )}
 
-      {/* Admin Review / Confirmation Modal */}
+      {/* ADMIN APPROVAL / REJECTION / REVISION MODAL */}
       {actionExpense && actionType && (
         <Modal
           isOpen={!!actionExpense}
@@ -897,9 +1001,9 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
           title={
             actionType === 'approve'
               ? `Confirm & Post Shared Expense: ${actionExpense.expenseNumber}`
-              : actionType === 'revision'
-              ? `Request Revision: ${actionExpense.expenseNumber}`
-              : `Reject Submission: ${actionExpense.expenseNumber}`
+              : actionType === 'reject'
+              ? `Reject Submission: ${actionExpense.expenseNumber}`
+              : `Request Revision: ${actionExpense.expenseNumber}`
           }
           subtitle={`Submitted by ${actionExpense.submittedByOrgName || actionExpense.createdBy} (${actionExpense.submittedByEmail || ''})`}
           maxWidth="lg"
@@ -921,60 +1025,108 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer ${
                   actionType === 'approve'
                     ? 'bg-[#009A44] hover:bg-[#007D37]'
-                    : actionType === 'revision'
-                    ? 'bg-amber-600 hover:bg-amber-700'
-                    : 'bg-rose-600 hover:bg-rose-700'
+                    : actionType === 'reject'
+                    ? 'bg-rose-700 hover:bg-rose-800'
+                    : 'bg-amber-600 hover:bg-amber-700'
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
+                {actionType === 'approve' && <CheckCircle2 className="w-4 h-4" />}
+                {actionType === 'reject' && <Ban className="w-4 h-4" />}
+                {actionType === 'revision' && <RotateCcw className="w-4 h-4" />}
                 <span>
                   {actionType === 'approve'
                     ? 'Confirm & Post to Ledger'
-                    : actionType === 'revision'
-                    ? 'Send Revision Request'
-                    : 'Confirm Rejection'}
+                    : actionType === 'reject'
+                    ? 'Confirm Rejection'
+                    : 'Send Revision Request'}
                 </span>
               </button>
             </div>
           }
         >
           <div className="space-y-4">
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-bold text-slate-900">{actionExpense.description}</span>
                 <span className="font-mono font-bold text-slate-900">
                   {FinancialCalculator.formatRWF(actionExpense.totalAmount)}
                 </span>
               </div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                <span>Category: <strong className="text-emerald-700">{actionExpense.category}</strong></span>
+                <span>•</span>
+                <span>Frequency: <strong>{actionExpense.billingFrequency}</strong></span>
+              </div>
+
               {actionExpense.submitterComments && (
-                <div className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 mt-2">
-                  <strong className="text-slate-800 block text-[11px]">Submitter Justification:</strong>
+                <div className="text-xs text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 mt-2">
+                  <strong className="text-slate-800 block text-[11px] font-semibold">
+                    Department Submitter Justification:
+                  </strong>
                   <p className="mt-0.5 italic">"{actionExpense.submitterComments}"</p>
                 </div>
               )}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-800">
-                {actionType === 'approve' ? 'Administrator Approval Remarks (Optional)' : 'Remarks / Feedback for Department *'}
-              </label>
-              <textarea
-                rows={3}
-                value={adminRemarks}
-                onChange={(e) => setAdminRemarks(e.target.value)}
-                placeholder={
-                  actionType === 'approve'
-                    ? 'Approved for shared facility cost recovery schedule.'
-                    : 'Explain what needs to be changed or corrected by the department...'
-                }
-                className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-              />
-            </div>
+            {/* REJECTION REASON SECTION */}
+            {actionType === 'reject' && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-rose-900 block">
+                  Rejection Reason (Required - will be sent to {actionExpense.submittedByOrgName || 'the department'}) *
+                </label>
+                
+                {/* Quick Preset Reason Chips */}
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase">Quick Reason Presets:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {rejectionPresetReasons.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setRejectionReason(preset)}
+                        className="text-[10px] px-2.5 py-1 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 rounded-lg border border-slate-200 hover:border-rose-200 transition-colors text-left"
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <textarea
+                  rows={3}
+                  required
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Explain why this shared expense is rejected (e.g., missing official receipt, incorrect tariff, duplicate bill)..."
+                  className="w-full p-2.5 text-xs bg-rose-50/50 border border-rose-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500/20 text-rose-950"
+                />
+              </div>
+            )}
+
+            {/* APPROVAL / REVISION REMARKS SECTION */}
+            {actionType !== 'reject' && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-800">
+                  {actionType === 'approve' ? 'Administrator Approval Remarks (Optional)' : 'Remarks / Feedback for Department *'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminRemarks}
+                  onChange={(e) => setAdminRemarks(e.target.value)}
+                  placeholder={
+                    actionType === 'approve'
+                      ? 'Approved and confirmed by Emmanuel Niyonzima for shared facility cost recovery schedule.'
+                      : 'Explain what needs to be changed or corrected by the department...'
+                  }
+                  className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            )}
           </div>
         </Modal>
       )}
 
-      {/* View Allocations Breakdown Modal */}
+      {/* VIEW ALLOCATIONS BREAKDOWN MODAL */}
       {viewExpense && (
         <Modal
           isOpen={!!viewExpense}
@@ -1009,7 +1161,7 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 <div>
                   <span className="text-slate-500 text-[10px] uppercase font-semibold">Submitted By Department</span>
                   <p className="font-bold text-slate-900 mt-0.5">
-                    {viewExpense.submittedByOrgName || viewExpense.createdBy} ({viewExpense.submittedByEmail || 'core'})
+                    {viewExpense.submittedByOrgName || viewExpense.createdBy} ({viewExpense.submittedByEmail || 'department'})
                   </p>
                 </div>
                 <div>
@@ -1025,7 +1177,17 @@ export const SharedExpensesView: React.FC<SharedExpensesViewProps> = ({
                 </div>
               )}
 
-              {viewExpense.adminRemarks && (
+              {viewExpense.rejectionReason && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-900">
+                  <strong className="text-rose-900 block font-semibold text-[11px] flex items-center gap-1">
+                    <Ban className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Administrator Rejection Reason (Emmanuel Niyonzima):</span>
+                  </strong>
+                  <p className="mt-0.5">{viewExpense.rejectionReason}</p>
+                </div>
+              )}
+
+              {viewExpense.adminRemarks && !viewExpense.rejectionReason && (
                 <div className="p-2.5 bg-[#E8F8EE] border border-[#A7E7BF] rounded-lg text-slate-800">
                   <strong className="text-[#007D37] block font-semibold text-[11px]">Administrator Remarks (Emmanuel):</strong>
                   <p className="mt-0.5">{viewExpense.adminRemarks}</p>
