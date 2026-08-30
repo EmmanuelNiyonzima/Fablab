@@ -321,10 +321,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       {/* 2. Top KPI Section */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            {isAdmin ? `1. Core Executive Financial Indicators (FY ${selectedYear})` : `1. Department Financial Indicators (${userOrg?.name})`}
+          <h2 className="text-xs font-bold text-[#0B192C] uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#0F4C81]" />
+            {isAdmin ? `1. Core Executive Financial Indicators (FY ${selectedYear})` : `1. Department Financial Indicators (${userOrg?.name || 'Department'})`}
           </h2>
-          <span className="text-[11px] text-slate-400 font-medium">
+          <span className="text-[11px] text-slate-500 font-medium hidden sm:inline-block">
             {isAdmin ? 'Consolidated facility accounting ledgers' : 'Restricted and isolated to your department'}
           </span>
         </div>
@@ -332,144 +333,222 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         {isAdmin ? (
           /* ADMIN CONSOLIDATED VIEW */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 1. Total Income */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Income / Revenue</span>
-                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-                  <ArrowUpRight className="w-5 h-5" />
+            {/* 1. Total Income / Revenue - Blue (Primary Financial) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Total Income / Revenue
+                </span>
+                <div className="p-2 rounded-xl bg-blue-50 text-[#0F4C81] shrink-0">
+                  <ArrowUpRight className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(totalRevenue)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#0F4C81] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {totalRevenue.toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">Facility fees & grants</span>
-                <span className="font-bold text-emerald-700">+14.2% vs Q2</span>
+                <span className="font-bold text-[#007D37] bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
+                  +14.2% vs Q2
+                </span>
               </div>
             </div>
 
-            {/* 2. Total Expenses */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Expenses</span>
-                <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
-                  <ArrowDownLeft className="w-5 h-5" />
+            {/* 2. Total Expenses - Neutral Dark / Navy */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Total Operating Expenses
+                </span>
+                <div className="p-2 rounded-xl bg-slate-100 text-slate-700 shrink-0">
+                  <ArrowDownLeft className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(totalExpenses)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#0B192C] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {totalExpenses.toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">Direct & administrative</span>
-                <span className="font-bold text-rose-700">96.9% of budget</span>
+                <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                  96.9% of budget
+                </span>
               </div>
             </div>
 
-            {/* 3. Shared Expenses */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Shared Facility Pool</span>
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
-                  <Layers className="w-5 h-5" />
+            {/* 3. Shared Facility Pool - Blue (Primary Financial) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Shared Facility Pool
+                </span>
+                <div className="p-2 rounded-xl bg-blue-50 text-[#0F4C81] shrink-0">
+                  <Layers className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(totalSharedExpenses)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#0F4C81] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {totalSharedExpenses.toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">4-organization pool</span>
-                <span className="font-bold text-blue-700">100% Apportioned</span>
+                <span className="font-bold text-[#0F4C81] bg-blue-50 px-2 py-0.5 rounded-md text-[11px]">
+                  100% Apportioned
+                </span>
               </div>
             </div>
 
-            {/* 4. Net Operating Balance */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Net Operating Balance</span>
-                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
-                  <TrendingUp className="w-5 h-5" />
+            {/* 4. Net Operating Balance - Green (Positive / Surplus) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Net Operating Balance
+                </span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-[#007D37] shrink-0">
+                  <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
-                {formatRWF(netIncome)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <div className="my-2">
+                <p className={`text-[26px] xl:text-[30px] font-black tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap ${netIncome >= 0 ? 'text-[#007D37]' : 'text-[#DC2626]'}`}>
+                  {netIncome.toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">Operating margin</span>
-                <span className="font-bold text-emerald-700">36.8% Surplus</span>
+                <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${netIncome >= 0 ? 'text-[#007D37] bg-emerald-50' : 'text-[#DC2626] bg-rose-50'}`}>
+                  {netIncome >= 0 ? '36.8% Surplus' : 'Deficit'}
+                </span>
               </div>
             </div>
           </div>
         ) : (
-          /* DEPARTMENT ISOLATED VIEW */
+          /* DEPARTMENT ISOLATED VIEW (Clean, High Readability, Consistent Color System) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 1. Department Annual Allocation */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Your Annual Cost Share</span>
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
-                  <Building2 className="w-5 h-5" />
+            {/* 1. Department Annual Allocation - Blue (Primary Financial) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Your Annual Cost Share
+                </span>
+                <div className="p-2 rounded-xl bg-blue-50 text-[#0F4C81] shrink-0">
+                  <Building2 className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(myOrgSummary?.annualAmount || 0)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">Cost allocation share</span>
-                <span className="font-bold text-blue-700">{myOrgSummary?.percentageOfTotal.toFixed(1)}% of facility</span>
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#0F4C81] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {(myOrgSummary?.annualAmount || 0).toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Facility share</span>
+                <span className="font-bold text-[#0F4C81] bg-blue-50 px-2 py-0.5 rounded-md text-[11px]">
+                  {myOrgSummary?.percentageOfTotal.toFixed(1)}% of total
+                </span>
               </div>
             </div>
 
-            {/* 2. Monthly Normalized Dues */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Monthly Contribution Due</span>
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-                  <Clock className="w-5 h-5" />
+            {/* 2. Monthly Normalized Dues - Orange (Pending / Due) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Monthly Contribution Due
+                </span>
+                <div className="p-2 rounded-xl bg-amber-50 text-[#D97706] shrink-0">
+                  <Clock className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(myOrgSummary?.monthlyAmount || 0)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#D97706] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {(myOrgSummary?.monthlyAmount || 0).toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                 <span className="text-slate-500">Billing cycle</span>
-                <span className="font-bold text-amber-700">Monthly normalized</span>
+                <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                  Monthly normalized
+                </span>
               </div>
             </div>
 
-            {/* 3. Contributions Remitted YTD */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Contributions Paid (YTD)</span>
-                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
-                  <CheckCircle className="w-5 h-5" />
+            {/* 3. Contributions Remitted YTD - Green (Positive / Paid) */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Contributions Paid (YTD)
+                </span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-[#007D37] shrink-0">
+                  <CheckCircle className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
-                {formatRWF(myOrgSummary?.totalPaidYTD || 0)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">Remittance progress</span>
-                <span className="font-bold text-emerald-700">
+              <div className="my-2">
+                <p className="text-[26px] xl:text-[30px] font-black text-[#007D37] tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap">
+                  {(myOrgSummary?.totalPaidYTD || 0).toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Remittance rate</span>
+                <span className="font-bold text-[#007D37] bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
                   {(((myOrgSummary?.totalPaidYTD || 0) / (myOrgSummary?.annualAmount || 1)) * 100).toFixed(1)}% Settled
                 </span>
               </div>
             </div>
 
-            {/* 4. Outstanding Payable to Facility */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Outstanding Balance Due</span>
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
-                  <Receipt className="w-5 h-5" />
+            {/* 4. Outstanding Payable - Orange if due, Red ONLY if overdue, Green if 0 */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between min-h-[148px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Outstanding Balance Due
+                </span>
+                <div className={`p-2 rounded-xl shrink-0 ${
+                  (myOrgSummary?.outstandingBalance || 0) > 0 
+                    ? 'bg-amber-50 text-[#D97706]' 
+                    : 'bg-emerald-50 text-[#007D37]'
+                }`}>
+                  <Receipt className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
-                {formatRWF(myOrgSummary?.outstandingBalance || 0)}
-              </p>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">Status</span>
-                <span className={`font-bold ${(myOrgSummary?.outstandingBalance || 0) > 0 ? 'text-amber-600' : 'text-emerald-700'}`}>
+              <div className="my-2">
+                <p className={`text-[26px] xl:text-[30px] font-black tracking-tight font-mono tabular-nums leading-none flex items-baseline flex-wrap ${
+                  (myOrgSummary?.outstandingBalance || 0) > 0 ? 'text-[#D97706]' : 'text-[#007D37]'
+                }`}>
+                  {(myOrgSummary?.outstandingBalance || 0).toLocaleString()}
+                  <span className="text-xs sm:text-sm font-bold text-slate-400 font-sans uppercase ml-1.5 tracking-normal">
+                    RWF
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <span className="text-slate-500">Account status</span>
+                <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
+                  (myOrgSummary?.outstandingBalance || 0) > 0 
+                    ? 'text-amber-800 bg-amber-50' 
+                    : 'text-[#007D37] bg-emerald-50'
+                }`}>
                   {(myOrgSummary?.outstandingBalance || 0) > 0 ? 'Dues Pending' : 'Account Current'}
                 </span>
               </div>
@@ -478,46 +557,70 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         )}
       </div>
 
-        {/* Secondary Supporting Metrics Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash & Bank</p>
-              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalCashBalance)}</p>
-            </div>
-            <Wallet className="w-4 h-4 text-slate-500" />
+      {/* Secondary Supporting Metrics Row (Clean, Equal-Sized, Non-Cluttered) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Total Cash & Bank</p>
+            <p className="text-sm font-black text-[#0B192C] font-mono tabular-nums mt-0.5">
+              {totalCashBalance.toLocaleString()} <span className="text-[10px] font-bold text-slate-400 font-sans">RWF</span>
+            </p>
           </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400">Accounts Receivable</p>
-              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalAR)}</p>
-            </div>
-            <DollarSign className="w-4 h-4 text-blue-600" />
-          </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400">Accounts Payable</p>
-              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalAP)}</p>
-            </div>
-            <Receipt className="w-4 h-4 text-rose-600" />
-          </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400">Outstanding Org Dues</p>
-              <p className="text-xs font-bold text-amber-700 font-numeric">{formatRWF(totalOutstandingContributions)}</p>
-            </div>
-            <AlertCircle className="w-4 h-4 text-amber-600" />
+          <div className="p-2 bg-emerald-50 text-[#007D37] rounded-lg shrink-0">
+            <Wallet className="w-4 h-4" />
           </div>
         </div>
+
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Accounts Receivable</p>
+            <p className="text-sm font-black text-[#0F4C81] font-mono tabular-nums mt-0.5">
+              {totalAR.toLocaleString()} <span className="text-[10px] font-bold text-slate-400 font-sans">RWF</span>
+            </p>
+          </div>
+          <div className="p-2 bg-blue-50 text-[#0F4C81] rounded-lg shrink-0">
+            <DollarSign className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Accounts Payable</p>
+            <p className="text-sm font-black text-[#0B192C] font-mono tabular-nums mt-0.5">
+              {totalAP.toLocaleString()} <span className="text-[10px] font-bold text-slate-400 font-sans">RWF</span>
+            </p>
+          </div>
+          <div className="p-2 bg-slate-100 text-slate-700 rounded-lg shrink-0">
+            <Receipt className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Outstanding Org Dues</p>
+            <p className={`text-sm font-black font-mono tabular-nums mt-0.5 ${
+              totalOutstandingContributions > 0 ? 'text-[#D97706]' : 'text-[#007D37]'
+            }`}>
+              {totalOutstandingContributions.toLocaleString()} <span className="text-[10px] font-bold text-slate-400 font-sans">RWF</span>
+            </p>
+          </div>
+          <div className={`p-2 rounded-lg shrink-0 ${
+            totalOutstandingContributions > 0 ? 'bg-amber-50 text-[#D97706]' : 'bg-emerald-50 text-[#007D37]'
+          }`}>
+            {totalOutstandingContributions > 0 ? (
+              <AlertCircle className="w-4 h-4" />
+            ) : (
+              <CheckCircle className="w-4 h-4" />
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* 3. Income vs Expenses Chart Section with View Switcher */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            <h3 className="text-sm font-bold text-[#0B192C] tracking-tight">
               2. Income vs Expenses Performance Over Time
             </h3>
             <p className="text-xs text-slate-500">
@@ -532,8 +635,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               onClick={() => setIncomeExpenseChartType('line')}
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 incomeExpenseChartType === 'line'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#0B192C] shadow-xs'
+                  : 'text-slate-600 hover:text-[#0B192C]'
               }`}
             >
               <LineIcon className="w-3.5 h-3.5" />
@@ -544,8 +647,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               onClick={() => setIncomeExpenseChartType('column')}
               className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 incomeExpenseChartType === 'column'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#0B192C] shadow-xs'
+                  : 'text-slate-600 hover:text-[#0B192C]'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -556,19 +659,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* Legend Indicators */}
         <div className="flex flex-wrap items-center gap-4 pt-3 pb-2 text-xs font-semibold">
-          <span className="flex items-center gap-1.5 text-emerald-700">
+          <span className="flex items-center gap-1.5 text-[#007D37]">
             <span className="w-3 h-3 rounded-md bg-[#009A44]" /> Total Operating Revenue
           </span>
-          <span className="flex items-center gap-1.5 text-rose-700">
-            <span className="w-3 h-3 rounded-md bg-[#E31B23]" /> Total Operating Expenses
+          <span className="flex items-center gap-1.5 text-slate-700">
+            <span className="w-3 h-3 rounded-md bg-[#64748B]" /> Total Operating Expenses
           </span>
-          <span className="flex items-center gap-1.5 text-blue-700">
+          <span className="flex items-center gap-1.5 text-[#0F4C81]">
             <span className="w-3 h-3 rounded-md bg-[#0F4C81]" /> Net Operating Margin
           </span>
         </div>
 
         {/* Chart Rendering */}
-        <div className="h-72 w-full mt-2">
+        <div className="h-64 w-full mt-2">
           <ResponsiveContainer width="100%" height="100%">
             {incomeExpenseChartType === 'line' ? (
               <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
@@ -578,8 +681,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     <stop offset="95%" stopColor="#009A44" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#E31B23" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#E31B23" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#64748B" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -612,7 +715,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   type="monotone"
                   dataKey="expenses"
                   name="Expense"
-                  stroke="#E31B23"
+                  stroke="#64748B"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#colorExp)"
@@ -646,7 +749,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   }}
                 />
                 <Bar dataKey="revenue" name="Revenue" fill="#009A44" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" name="Expenses" fill="#E31B23" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="#64748B" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="net" name="Net Margin" fill="#0F4C81" radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
@@ -672,7 +775,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </Button>
             }
           >
-            <div className="h-64 w-full">
+            <div className="h-60 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={orgBarData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -712,15 +815,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             title="4. Shared Expense Distribution"
             subtitle="53,200,600 RWF Annual Facility Pool (100% Split)"
           >
-            <div className="h-44 w-full flex items-center justify-center">
+            <div className="h-40 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={orgPieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={70}
+                    innerRadius={42}
+                    outerRadius={66}
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -743,15 +846,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             </div>
 
             {/* Organizations Legend breakdown */}
-            <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
               {orgPieData.map((org) => (
                 <div key={org.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: org.color }} />
                     <span className="font-bold text-slate-800">{org.name}</span>
                   </div>
-                  <div className="text-right font-numeric">
-                    <span className="font-bold text-slate-900">{formatRWF(org.value)}</span>
+                  <div className="text-right font-mono tabular-nums">
+                    <span className="font-bold text-[#0B192C]">{formatRWF(org.value)}</span>
                     <span className="text-[11px] text-slate-500 ml-1.5 font-bold">({org.share.toFixed(1)}%)</span>
                   </div>
                 </div>
@@ -765,7 +868,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            <h3 className="text-sm font-bold text-[#0B192C] tracking-tight">
               5. Submission & Approval Governance Status
             </h3>
             <p className="text-xs text-slate-500">
@@ -783,44 +886,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-          {/* Approved / Posted */}
+          {/* Approved / Posted - Green */}
           <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-emerald-950">Approved / Posted</span>
-              <CheckCircle className="w-4 h-4 text-emerald-700" />
+              <CheckCircle className="w-4 h-4 text-[#007D37]" />
             </div>
-            <p className="text-2xl font-black text-emerald-800 mt-2 font-numeric">{approvedSharedCount}</p>
+            <p className="text-2xl font-black text-[#007D37] mt-2 font-mono tabular-nums">{approvedSharedCount}</p>
             <p className="text-[11px] text-emerald-700 mt-1">Official in General Ledger</p>
           </div>
 
-          {/* Pending Confirmation */}
+          {/* Pending Confirmation - Orange */}
           <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-950">Pending Review</span>
-              <Clock className="w-4 h-4 text-amber-700" />
+              <Clock className="w-4 h-4 text-[#D97706]" />
             </div>
-            <p className="text-2xl font-black text-amber-800 mt-2 font-numeric">{pendingSubmissions.length}</p>
+            <p className="text-2xl font-black text-[#D97706] mt-2 font-mono tabular-nums">{pendingSubmissions.length}</p>
             <p className="text-[11px] text-amber-700 mt-1">Awaiting Admin Confirmation</p>
           </div>
 
-          {/* Draft */}
+          {/* Draft - Slate / Neutral */}
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800">Draft In-Progress</span>
               <FileText className="w-4 h-4 text-slate-500" />
             </div>
-            <p className="text-2xl font-black text-slate-800 mt-2 font-numeric">{draftSharedCount}</p>
+            <p className="text-2xl font-black text-[#0B192C] mt-2 font-mono tabular-nums">{draftSharedCount}</p>
             <p className="text-[11px] text-slate-500 mt-1">Unsubmitted drafts</p>
           </div>
 
-          {/* Rejected */}
+          {/* Rejected - Red only for rejected items */}
           <div className="p-4 rounded-xl bg-rose-50/70 border border-rose-200/80">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-rose-950">Rejected</span>
-              <XCircle className="w-4 h-4 text-rose-700" />
+              <XCircle className="w-4 h-4 text-[#DC2626]" />
             </div>
-            <p className="text-2xl font-black text-rose-800 mt-2 font-numeric">{rejectedSharedCount}</p>
-            <p className="text-[11px] text-rose-700 mt-1">Excluded from financial totals</p>
+            <p className="text-2xl font-black text-[#DC2626] mt-2 font-mono tabular-nums">{rejectedSharedCount}</p>
+            <p className="text-[11px] text-rose-700 mt-1">Excluded from totals</p>
           </div>
         </div>
       </div>
@@ -864,16 +967,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     <th className="pb-2 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-numeric">
+                <tbody className="divide-y divide-slate-100 font-mono tabular-nums">
                   {budgetVsActualData.map((row) => (
                     <tr key={row.category} className="hover:bg-slate-50 transition-colors">
                       <td className="py-2.5 font-sans font-semibold text-slate-800">{row.category}</td>
                       <td className="py-2.5 text-right text-slate-600">{row.budget.toLocaleString()} RWF</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{row.actual.toLocaleString()} RWF</td>
-                      <td className={`py-2.5 text-right font-bold ${row.favorable ? 'text-[#007D37]' : 'text-[#C2141B]'}`}>
+                      <td className="py-2.5 text-right font-bold text-[#0B192C]">{row.actual.toLocaleString()} RWF</td>
+                      <td className={`py-2.5 text-right font-bold ${row.favorable ? 'text-[#007D37]' : 'text-[#DC2626]'}`}>
                         {row.favorable ? '-' : '+'}{row.variance.toLocaleString()} RWF
                       </td>
-                      <td className="py-2.5 text-center">
+                      <td className="py-2.5 text-center font-sans">
                         <Badge variant={row.favorable ? 'success' : 'danger'} size="sm">
                           {row.favorable ? 'Under Budget' : 'Over Budget'}
                         </Badge>
@@ -912,8 +1015,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     <Scale className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">Trial Balance Debits / Credits</p>
-                    <p className="text-[11px] text-slate-500 font-numeric">
+                    <p className="font-bold text-[#0B192C]">Trial Balance Debits / Credits</p>
+                    <p className="text-[11px] text-slate-500 font-mono tabular-nums">
                       Total: {trialBalance.totalDebits.toLocaleString()} RWF (Diff: {quality.trialBalanceDifference} RWF)
                     </p>
                   </div>
@@ -930,7 +1033,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">RRA 18% VAT Statutory Reconciliation</p>
+                    <p className="font-bold text-[#0B192C]">RRA 18% VAT Statutory Reconciliation</p>
                     <p className="text-[11px] text-slate-500">Output VAT vs Input Tax credits balanced</p>
                   </div>
                 </div>
@@ -944,7 +1047,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     <Layers className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">Shared Facility Apportionment</p>
+                    <p className="font-bold text-[#0B192C]">Shared Facility Apportionment</p>
                     <p className="text-[11px] text-slate-500">FabLab Rwanda, kLab, Fab Cafe, 250Startups</p>
                   </div>
                 </div>
@@ -954,7 +1057,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               {/* Overall Health Score */}
               <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
                 <span className="text-slate-600 font-medium">Overall System Financial Health Score:</span>
-                <span className="font-bold font-numeric text-[#007D37] text-sm">{quality.healthScore}% Optimal</span>
+                <span className="font-bold font-mono tabular-nums text-[#007D37] text-sm">{quality.healthScore}% Optimal</span>
               </div>
             </div>
           </Card>
