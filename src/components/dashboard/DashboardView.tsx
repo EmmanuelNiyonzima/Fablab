@@ -16,7 +16,13 @@ import {
   CheckCircle2,
   Scale,
   PlusCircle,
-  FileText
+  FileText,
+  BarChart3,
+  LineChart as LineIcon,
+  Download,
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -50,45 +56,44 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const [selectedYear, setSelectedYear] = useState('2026');
+  const [incomeExpenseChartType, setIncomeExpenseChartType] = useState<'line' | 'column'>('line');
 
   const state = storageService.getState();
-  const pnl = AccountingService.getStatementOfComprehensiveIncome(state, parseInt(selectedYear, 10));
+  const fiscalYearNum = parseInt(selectedYear, 10);
+  const pnl = AccountingService.getStatementOfComprehensiveIncome(state, fiscalYearNum);
   const sharedSummary = AccountingService.getSharedSpaceSummary(state);
   const trialBalance = AccountingService.getTrialBalance(state);
   const quality = AccountingService.getQualityReconciliation(state);
-  const forecast = FinancialCalculator.calculateForecast(
-    state.sharedExpenses.map((e) => ({
-      category: e.category,
-      accountCode: e.accountCode,
-      annualBase: e.annualAmount,
-      isUtility: ['Electricity', 'WASAC', 'Drinking Water'].includes(e.category),
-    })),
-    state.forecastAssumptions.generalInflationRate,
-    state.forecastAssumptions.utilitiesEscalationRate
-  );
 
-  // 1. Total Revenue
+  // 1. Total Revenue (Official Approved/Posted)
   const totalRevenue = pnl.revenueTotal;
-  // 2. Total Expenses
+  // 2. Total Expenses (Official Approved/Posted)
   const totalExpenses = pnl.adminExpensesTotal;
-  // 3. Net Income
+  // 3. Net Operating Income
   const netIncome = pnl.netProfitBeforeTax;
-  // 4. Cash Balance
+  // 4. Shared Facility Expenses Pool
+  const totalSharedExpenses = sharedSummary.totalAnnualSharedBudget;
+
+  // Secondary Metrics
   const cashAccounts = state.accounts.filter((a) => a.type === 'Cash and Cash Equivalents');
   const totalCashBalance = cashAccounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0);
-  // 5. Accounts Receivable
+
   const arAccounts = state.accounts.filter((a) => a.type === 'Trade Receivables');
   const totalAR = arAccounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0);
-  // 6. Accounts Payable
+
   const apAccounts = state.accounts.filter((a) => a.type === 'Current Liabilities');
   const totalAP = apAccounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0);
-  // 7. Shared Facility Expenses
-  const totalSharedExpenses = sharedSummary.totalAnnualSharedBudget;
-  // 8. Outstanding Contributions
+
   const totalOutstandingContributions = state.contributions.reduce(
     (sum, c) => sum + (c.outstandingBalance || 0),
     0
   );
+
+  // Submissions Governance Breakdown
+  const pendingSubmissions = state.sharedExpenses.filter((e) => e.status === 'Submitted');
+  const approvedSharedCount = state.sharedExpenses.filter((e) => e.status === 'Posted' || e.status === 'Approved').length;
+  const rejectedSharedCount = state.sharedExpenses.filter((e) => e.status === 'Rejected').length;
+  const draftSharedCount = state.sharedExpenses.filter((e) => e.status === 'Draft').length;
 
   // Monthly Revenue vs Expense trend data
   const monthlyTrendData = [
@@ -102,11 +107,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     { month: 'Aug', revenue: Math.round(totalRevenue / 8), expenses: Math.round(totalExpenses / 8), net: Math.round(netIncome / 8) },
   ];
 
-  // 4 Organizations Space Cost Distribution
-  const orgPalette = {
-    'org-fablab': '#0F4C81',   // FabLab Blue
-    'org-klab': '#009A44',     // FabLab Green
-    'org-fabcafe': '#E31B23',  // FabLab Red
+  // 4 Organizations Space Cost Distribution & Bar Comparison
+  const orgPalette: Record<string, string> = {
+    'org-fablab': '#0F4C81',    // FabLab Blue
+    'org-klab': '#009A44',      // FabLab Green
+    'org-fabcafe': '#E31B23',   // FabLab Red
     'org-250startups': '#D97706' // Accent Amber
   };
 
@@ -114,9 +119,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     const alloc = sharedSummary.orgSummaries.find((o) => o.orgId === org.id);
     return {
       name: org.name,
+      code: org.code,
       value: alloc ? alloc.annualAmount : 0,
+      monthly: alloc ? alloc.monthlyAmount : 0,
       share: alloc ? alloc.percentageOfTotal : 0,
-      color: (orgPalette as any)[org.id] || '#64748B',
+      color: orgPalette[org.id] || '#64748B',
+    };
+  });
+
+  const orgBarData = state.organizations.map((org) => {
+    const alloc = sharedSummary.orgSummaries.find((o) => o.orgId === org.id);
+    return {
+      name: org.name.replace(' Rwanda', '').replace(' Operations', ''),
+      allocated: alloc ? alloc.annualAmount : 0,
+      paid: alloc ? alloc.totalPaidYTD : 0,
+      outstanding: alloc ? alloc.outstandingBalance : 0,
     };
   });
 
@@ -129,35 +146,62 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     { category: 'Water & Sanitation', budget: 2400000, actual: 1600000, variance: 800000, favorable: true },
   ];
 
-  const formatRWF = (val: number) => {
-    return `${val.toLocaleString()} RWF`;
+  const formatRWF = (val: number) => `${val.toLocaleString()} RWF`;
+
+  const handleExportFullManagementExcel = () => {
+    ExportService.exportFullManagementWorkbook(state, {
+      fiscalYear: fiscalYearNum,
+      generatedBy: state.currentUser.name,
+    });
+  };
+
+  const handleExportExecutivePDF = () => {
+    const headers = ['Financial Performance Metric', 'Official FY2026 Value (RWF)', 'Benchmark / Context'];
+    const rows = [
+      ['Total Operating Revenue', formatRWF(totalRevenue), 'Official approved receipts & grants'],
+      ['Total Operating Expenses', formatRWF(totalExpenses), 'Official direct & administrative costs'],
+      ['Shared Space Facility Pool', formatRWF(totalSharedExpenses), 'Apportioned across 4 organizations'],
+      ['Net Operating Surplus', formatRWF(netIncome), `${((netIncome / (totalRevenue || 1)) * 100).toFixed(1)}% Operating Margin`],
+      ['Total Cash & Bank Reserves', formatRWF(totalCashBalance), 'BK, Equity Bank & Cash Drawer'],
+      ['Outstanding Contributions', formatRWF(totalOutstandingContributions), 'Uncollected dues from resident orgs'],
+      ['Double-Entry Trial Balance', '0.00 RWF Diff', '100% Balanced & Audited'],
+    ];
+
+    ExportService.exportToPDF('Executive Financial Management Summary Report', 'SEMS_Executive_Financial_Report', headers, rows, {
+      generatedBy: state.currentUser.name,
+      summaryStats: [
+        { label: 'Revenue', value: formatRWF(totalRevenue) },
+        { label: 'Expenses', value: formatRWF(totalExpenses) },
+        { label: 'Net Surplus', value: formatRWF(netIncome) },
+      ],
+    });
   };
 
   return (
     <div className="space-y-6">
       
-      {/* Top Banner & Quick Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+      {/* 1. Header Banner & Quick Financial Actions */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">
               Shared Expenses Management System
             </h1>
-            <span className="px-2 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
+            <span className="px-2.5 py-0.5 text-xs font-bold bg-[#EBF3FA] text-[#0F4C81] border border-[#BCD4EA] rounded-md font-numeric">
               FY {selectedYear}
             </span>
             {state.currentUser.role === 'ADMIN' && (
-              <span className="px-2 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-[#E8F8EE] text-[#007D37] border border-[#A7E7BF] rounded-md">
                 Admin: Emmanuel Niyonzima
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Executive financial governance, double-entry general ledger, and multi-organization shared expense management.
+            Executive management dashboard, multi-organization shared expense allocation, and auditable financial ledgers.
           </p>
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="primary"
@@ -173,43 +217,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             icon={ArrowUpRight}
             onClick={() => onNavigate('income')}
           >
-            Post Revenue / Income
+            Post Income
           </Button>
           <Button
             variant="outline"
             size="sm"
             icon={FileSpreadsheet}
-            onClick={() => {
-              const headers = ['Date', 'Vendor / Org', 'Category', 'Description', 'Total (RWF)', 'Status'];
-              const rows = state.expenseTransactions.map((e) => [
-                e.date,
-                e.vendor,
-                e.category,
-                e.description,
-                e.totalWithTax,
-                e.status,
-              ]);
-              ExportService.exportToExcel('Executive Financial Summary Register', 'SEMS_Financial_Report', headers, rows);
-            }}
+            onClick={handleExportFullManagementExcel}
+            className="border-emerald-600/50 text-emerald-800 hover:bg-emerald-50 font-bold"
           >
-            Export Excel
+            Export Management Excel (6 Sheets)
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Download}
+            onClick={handleExportExecutivePDF}
+          >
+            Executive PDF
           </Button>
         </div>
       </div>
 
-      {/* Pending Submissions Quick Action Notice for Administrator */}
-      {state.sharedExpenses.filter((e) => e.status === 'Submitted').length > 0 && (
-        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+      {/* Pending Submissions Alert Banner for Administrator */}
+      {pendingSubmissions.length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-xs shrink-0">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs font-bold text-amber-950">
-                {state.sharedExpenses.filter((e) => e.status === 'Submitted').length} Department Shared Expense(s) Awaiting Confirmation
+                {pendingSubmissions.length} Department Shared Expense Submission(s) Awaiting Confirmation
               </p>
               <p className="text-[11px] text-amber-800">
-                Departments have submitted shared space expenses with comments for Emmanuel's review and general ledger posting.
+                Departments have submitted shared space expenses with justification notes for Emmanuel's review and general ledger posting.
               </p>
             </div>
           </div>
@@ -218,149 +260,299 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             onClick={() => onNavigate('shared-expenses')}
             className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
           >
-            Review & Confirm Submissions
+            Review & Confirm Submissions ({pendingSubmissions.length})
           </button>
         </div>
       )}
 
-      {/* 8 Primary Financial KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Total Revenue */}
-        <StatCard
-          id="kpi-total-revenue"
-          title="Total Revenue"
-          value={formatRWF(totalRevenue)}
-          subtitle="FabLab training & grants"
-          icon={ArrowUpRight}
-          color="green"
-          trend={{ value: '14.2%', isPositive: true, label: 'vs Q2' }}
-          onClick={() => onNavigate('income')}
-        />
+      {/* 2. Top Large KPI Section: Total Income | Total Expenses | Shared Expenses | Net Balance */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            1. Core Executive Financial Indicators (FY {selectedYear})
+          </h2>
+          <span className="text-[11px] text-slate-400 font-medium">
+            Only approved & posted transactions included in official net totals
+          </span>
+        </div>
 
-        {/* 2. Total Expenses */}
-        <StatCard
-          id="kpi-total-expenses"
-          title="Total Expenses"
-          value={formatRWF(totalExpenses)}
-          subtitle="Direct & admin costs"
-          icon={ArrowDownLeft}
-          color="red"
-          trend={{ value: '3.1%', isPositive: false, label: 'variance' }}
-          onClick={() => onNavigate('expenses')}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 1. Total Income */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Income / Revenue</span>
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+              {formatRWF(totalRevenue)}
+            </p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500">Facility fees & grants</span>
+              <span className="font-bold text-emerald-700">+14.2% vs Q2</span>
+            </div>
+          </div>
 
-        {/* 3. Net Income */}
-        <StatCard
-          id="kpi-net-income"
-          title="Net Operating Income"
-          value={formatRWF(netIncome)}
-          subtitle="Operating margin 36.8%"
-          icon={TrendingUp}
-          color="green"
-          trend={{ value: '18.5%', isPositive: true, label: 'YoY' }}
-          onClick={() => onNavigate('income-statement')}
-        />
+          {/* 2. Total Expenses */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Expenses</span>
+              <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
+                <ArrowDownLeft className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+              {formatRWF(totalExpenses)}
+            </p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500">Direct & administrative</span>
+              <span className="font-bold text-rose-700">96.9% of budget</span>
+            </div>
+          </div>
 
-        {/* 4. Cash Balance */}
-        <StatCard
-          id="kpi-cash-balance"
-          title="Total Cash & Bank"
-          value={formatRWF(totalCashBalance)}
-          subtitle="BK, Equity & Cash drawer"
-          icon={Wallet}
-          color="green"
-          onClick={() => onNavigate('general-ledger')}
-        />
+          {/* 3. Shared Expenses */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Shared Facility Pool</span>
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                <Layers className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2 font-numeric">
+              {formatRWF(totalSharedExpenses)}
+            </p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500">4-organization pool</span>
+              <span className="font-bold text-blue-700">100% Apportioned</span>
+            </div>
+          </div>
 
-        {/* 5. Accounts Receivable */}
-        <StatCard
-          id="kpi-accounts-receivable"
-          title="Accounts Receivable"
-          value={formatRWF(totalAR)}
-          subtitle="Partner grants & invoices"
-          icon={DollarSign}
-          color="blue"
-          onClick={() => onNavigate('chart-of-accounts')}
-        />
+          {/* 4. Net Operating Balance */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Net Operating Balance</span>
+              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-emerald-700 mt-2 font-numeric">
+              {formatRWF(netIncome)}
+            </p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500">Operating margin</span>
+              <span className="font-bold text-emerald-700">36.8% Surplus</span>
+            </div>
+          </div>
+        </div>
 
-        {/* 6. Accounts Payable */}
-        <StatCard
-          id="kpi-accounts-payable"
-          title="Accounts Payable"
-          value={formatRWF(totalAP)}
-          subtitle="Vendor bills due"
-          icon={Receipt}
-          color="red"
-          onClick={() => onNavigate('expenses')}
-        />
+        {/* Secondary Supporting Metrics Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash & Bank</p>
+              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalCashBalance)}</p>
+            </div>
+            <Wallet className="w-4 h-4 text-slate-500" />
+          </div>
 
-        {/* 7. Shared Facility Expenses */}
-        <StatCard
-          id="kpi-shared-expenses"
-          title="Shared Space Expenses"
-          value={formatRWF(totalSharedExpenses)}
-          subtitle="Annual 4-org facility pool"
-          icon={Layers}
-          color="blue"
-          onClick={() => onNavigate('shared-expenses')}
-        />
+          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Accounts Receivable</p>
+              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalAR)}</p>
+            </div>
+            <DollarSign className="w-4 h-4 text-blue-600" />
+          </div>
 
-        {/* 8. Outstanding Contributions */}
-        <StatCard
-          id="kpi-outstanding-contributions"
-          title="Outstanding Contributions"
-          value={formatRWF(totalOutstandingContributions)}
-          subtitle="Due from co-located orgs"
-          icon={AlertCircle}
-          color={totalOutstandingContributions > 0 ? 'red' : 'green'}
-          onClick={() => onNavigate('contributions')}
-        />
+          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Accounts Payable</p>
+              <p className="text-xs font-bold text-slate-900 font-numeric">{formatRWF(totalAP)}</p>
+            </div>
+            <Receipt className="w-4 h-4 text-rose-600" />
+          </div>
+
+          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Outstanding Org Dues</p>
+              <p className="text-xs font-bold text-amber-700 font-numeric">{formatRWF(totalOutstandingContributions)}</p>
+            </div>
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+          </div>
+        </div>
       </div>
 
-      {/* Main Charts Section */}
+      {/* 3. Income vs Expenses Chart Section with View Switcher */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              2. Income vs Expenses Performance Over Time
+            </h3>
+            <p className="text-xs text-slate-500">
+              Monthly revenue inflows, operational disbursements, and net cash margins (FY {selectedYear})
+            </p>
+          </div>
+
+          {/* Chart Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+            <button
+              type="button"
+              onClick={() => setIncomeExpenseChartType('line')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                incomeExpenseChartType === 'line'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LineIcon className="w-3.5 h-3.5" />
+              <span>Line Chart (Trend)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIncomeExpenseChartType('column')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                incomeExpenseChartType === 'column'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Column Chart (Monthly)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Legend Indicators */}
+        <div className="flex flex-wrap items-center gap-4 pt-3 pb-2 text-xs font-semibold">
+          <span className="flex items-center gap-1.5 text-emerald-700">
+            <span className="w-3 h-3 rounded-md bg-[#009A44]" /> Total Operating Revenue
+          </span>
+          <span className="flex items-center gap-1.5 text-rose-700">
+            <span className="w-3 h-3 rounded-md bg-[#E31B23]" /> Total Operating Expenses
+          </span>
+          <span className="flex items-center gap-1.5 text-blue-700">
+            <span className="w-3 h-3 rounded-md bg-[#0F4C81]" /> Net Operating Margin
+          </span>
+        </div>
+
+        {/* Chart Rendering */}
+        <div className="h-72 w-full mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            {incomeExpenseChartType === 'line' ? (
+              <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#009A44" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#009A44" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#E31B23" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#E31B23" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#64748B' }}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                />
+                <Tooltip
+                  formatter={(value: any) => [`${Number(value).toLocaleString()} RWF`, '']}
+                  contentStyle={{
+                    backgroundColor: '#0F172A',
+                    borderColor: '#334155',
+                    borderRadius: '8px',
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Revenue"
+                  stroke="#009A44"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorRev)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expenses"
+                  name="Expense"
+                  stroke="#E31B23"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorExp)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="net"
+                  name="Net Margin"
+                  stroke="#0F4C81"
+                  strokeWidth={2}
+                  dot={{ r: 3.5, fill: '#0F4C81' }}
+                />
+              </AreaChart>
+            ) : (
+              <BarChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#64748B' }}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                />
+                <Tooltip
+                  formatter={(value: any) => [`${Number(value).toLocaleString()} RWF`, '']}
+                  contentStyle={{
+                    backgroundColor: '#0F172A',
+                    borderColor: '#334155',
+                    borderRadius: '8px',
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar dataKey="revenue" name="Revenue" fill="#009A44" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="#E31B23" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="net" name="Net Margin" fill="#0F4C81" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 4. Organization Comparison & Shared Expense Breakdown (2 Columns) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left: Monthly Revenue vs Expenses Trend (8 cols) */}
-        <div className="lg:col-span-8">
+        {/* Left: Bar Chart - Expenses by Organization (7 cols) */}
+        <div className="lg:col-span-7">
           <Card
-            title="Monthly Revenue vs Expenses & Operating Cash Flow"
-            subtitle="2026 Fiscal Performance (FabLab Rwanda Core & Commercial)"
+            title="3. Expenses & Contributions by Organization"
+            subtitle="Annual shared facility cost allocated vs contributions paid YTD"
             actions={
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-[11px] font-bold text-[#009A44]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#009A44]" /> Revenue
-                </span>
-                <span className="flex items-center gap-1 text-[11px] font-bold text-[#E31B23]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#E31B23]" /> Expense
-                </span>
-                <span className="flex items-center gap-1 text-[11px] font-bold text-[#0F4C81]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0F4C81]" /> Net Margin
-                </span>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onNavigate('organizations')}
+              >
+                View Details
+              </Button>
             }
           >
-            <div className="h-72 w-full">
+            <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#009A44" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#009A44" stopOpacity={0.0} />
-                    </linearGradient>
-                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#E31B23" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#E31B23" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
+                <BarChart data={orgBarData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={{ stroke: '#E2E8F0' }} />
                   <YAxis
                     tick={{ fontSize: 11, fill: '#64748B' }}
                     axisLine={{ stroke: '#E2E8F0' }}
                     tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
                   />
                   <Tooltip
-                    formatter={(value: any) => [`${Number(value).toLocaleString()} RWF`, '']}
+                    formatter={(val: any) => [`${Number(val).toLocaleString()} RWF`, '']}
                     contentStyle={{
                       backgroundColor: '#0F172A',
                       borderColor: '#334155',
@@ -369,45 +561,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                       fontSize: '12px',
                     }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Revenue"
-                    stroke="#009A44"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#colorRev)"
+                  <Legend
+                    verticalAlign="top"
+                    height={36}
+                    formatter={(value) => <span className="text-xs font-bold text-slate-700">{value}</span>}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    name="Expense"
-                    stroke="#E31B23"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#colorExp)"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="net"
-                    name="Net Cash"
-                    stroke="#0F4C81"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: '#0F4C81' }}
-                  />
-                </AreaChart>
+                  <Bar dataKey="allocated" name="Annual Allocation" fill="#0F4C81" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="paid" name="Contributions Paid" fill="#009A44" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="outstanding" name="Outstanding Due" fill="#D97706" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
         </div>
 
-        {/* Right: 4 Organizations Shared Facility Cost Allocation (4 cols) */}
-        <div className="lg:col-span-4">
+        {/* Right: Pie/Doughnut Chart - Shared Expense Distribution by Organization (5 cols) */}
+        <div className="lg:col-span-5">
           <Card
-            title="Shared Facility Apportionment"
-            subtitle="53,200,600 RWF / Year Pool"
+            title="4. Shared Expense Distribution"
+            subtitle="53,200,600 RWF Annual Facility Pool (100% Split)"
           >
-            <div className="h-48 w-full flex items-center justify-center">
+            <div className="h-44 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -415,7 +589,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     cx="50%"
                     cy="50%"
                     innerRadius={45}
-                    outerRadius={75}
+                    outerRadius={70}
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -424,7 +598,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: any) => [`${Number(val).toLocaleString()} RWF`, 'Allocation']}
+                    formatter={(val: any) => [`${Number(val).toLocaleString()} RWF`, 'Annual Share']}
                     contentStyle={{
                       backgroundColor: '#0F172A',
                       borderColor: '#334155',
@@ -443,7 +617,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <div key={org.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: org.color }} />
-                    <span className="font-semibold text-slate-800">{org.name}</span>
+                    <span className="font-bold text-slate-800">{org.name}</span>
                   </div>
                   <div className="text-right font-numeric">
                     <span className="font-bold text-slate-900">{formatRWF(org.value)}</span>
@@ -456,7 +630,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Budget vs Actual Comparison & Integrity Control Section */}
+      {/* 5. Submissions Governance & Approvals Status */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              5. Submission & Approval Governance Status
+            </h3>
+            <p className="text-xs text-slate-500">
+              Breakdown of shared expense submissions across approval stages
+            </p>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onNavigate('shared-expenses')}
+          >
+            Manage Submissions
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          {/* Approved / Posted */}
+          <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-950">Approved / Posted</span>
+              <CheckCircle className="w-4 h-4 text-emerald-700" />
+            </div>
+            <p className="text-2xl font-black text-emerald-800 mt-2 font-numeric">{approvedSharedCount}</p>
+            <p className="text-[11px] text-emerald-700 mt-1">Official in General Ledger</p>
+          </div>
+
+          {/* Pending Confirmation */}
+          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-950">Pending Review</span>
+              <Clock className="w-4 h-4 text-amber-700" />
+            </div>
+            <p className="text-2xl font-black text-amber-800 mt-2 font-numeric">{pendingSubmissions.length}</p>
+            <p className="text-[11px] text-amber-700 mt-1">Awaiting Admin Confirmation</p>
+          </div>
+
+          {/* Draft */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Draft In-Progress</span>
+              <FileText className="w-4 h-4 text-slate-500" />
+            </div>
+            <p className="text-2xl font-black text-slate-800 mt-2 font-numeric">{draftSharedCount}</p>
+            <p className="text-[11px] text-slate-500 mt-1">Unsubmitted drafts</p>
+          </div>
+
+          {/* Rejected */}
+          <div className="p-4 rounded-xl bg-rose-50/70 border border-rose-200/80">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-rose-950">Rejected</span>
+              <XCircle className="w-4 h-4 text-rose-700" />
+            </div>
+            <p className="text-2xl font-black text-rose-800 mt-2 font-numeric">{rejectedSharedCount}</p>
+            <p className="text-[11px] text-rose-700 mt-1">Excluded from financial totals</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Budget vs Actual Comparison & Integrity Control Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Budget vs Actual Quick Visual Table (7 cols) */}

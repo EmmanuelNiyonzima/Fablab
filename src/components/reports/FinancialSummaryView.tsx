@@ -29,19 +29,7 @@ export const FinancialSummaryView: React.FC = () => {
   };
 
   const handleExportSummaryExcel = () => {
-    const headers = ['Financial Performance Metric', 'FY2026 Value', 'Variance / Benchmark'];
-    const rows = [
-      ['Total Operating Revenue', FinancialCalculator.formatRWF(pnl.revenueTotal), '100% Topline'],
-      ['Cost of Direct Sales & Materials', FinancialCalculator.formatRWF(pnl.costOfSalesTotal), 'Lab Fabrication Directs'],
-      ['Gross Profit Surplus', FinancialCalculator.formatRWF(pnl.grossProfit), `${((pnl.grossProfit / (pnl.revenueTotal || 1)) * 100).toFixed(1)}% Gross Margin`],
-      ['Shared Facility Operating Budget', FinancialCalculator.formatRWF(shared.totalAnnualSharedBudget), 'Across 4 Resident Entities'],
-      ['Total Administrative Overheads', FinancialCalculator.formatRWF(pnl.adminExpensesTotal), 'Full Operational Disbursements'],
-      ['Net Comprehensive Operating Surplus', FinancialCalculator.formatRWF(pnl.netProfitBeforeTax), 'Positive Net Position'],
-      ['Trial Balance Integrity Variance', '0.00 RWF', 'Debits = Credits Balanced'],
-      ['System Quality Compliance Index', `${quality.healthScore}%`, 'All 12 Tests Passed'],
-    ];
-
-    ExportService.exportToExcel('Executive Financial Summary 2026', 'FabLab_ExecutiveSummary', headers, rows);
+    ExportService.exportFullManagementWorkbook(state, { fiscalYear: 2026, generatedBy: state.currentUser.name });
   };
 
   return (

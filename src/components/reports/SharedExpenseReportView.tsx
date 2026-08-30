@@ -102,7 +102,15 @@ export const SharedExpenseReportView: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4 text-slate-600" />
-            <span>Export Schedule</span>
+            <span>Export Schedule Excel</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => ExportService.exportFullManagementWorkbook(state, { fiscalYear: 2026, generatedBy: state.currentUser.name })}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export Full Management Workbook (6 Sheets)</span>
           </button>
         </div>
       </div>
