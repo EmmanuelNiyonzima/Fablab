@@ -21,10 +21,11 @@ function toCellRef(col: number, row: number): string {
 export class ExportService {
   /**
    * Applies corporate financial formatting across worksheets:
+   * - Converts string formulas (starting with '=') into native live Excel formulas
    * - Format currency: #,##0.00;[Red]-#,##0.00;"-"
    * - Format percentages: 0.00%
    * - Format quantities/integers: #,##0
-   * - Auto-calculate responsive column widths
+   * - Auto-calculate responsive column widths with generous padding (Arial font standard)
    */
   static applyProfessionalWorkbookFormatting(wb: XLSX.WorkBook) {
     wb.SheetNames.forEach((sheetName) => {
@@ -35,7 +36,7 @@ export class ExportService {
       const colMaxLens: number[] = [];
 
       for (let c = range.s.c; c <= range.e.c; c++) {
-        colMaxLens[c] = 12;
+        colMaxLens[c] = 14;
       }
 
       for (let r = range.s.r; r <= range.e.r; r++) {
@@ -44,23 +45,36 @@ export class ExportService {
           const cell = ws[cellRef];
           if (!cell) continue;
 
-          // Track string length for auto-width
-          const str = cell.v !== undefined && cell.v !== null ? String(cell.v) : '';
+          // Convert formula strings starting with '=' to true Excel formula cells
+          if (typeof cell.v === 'string' && cell.v.trim().startsWith('=')) {
+            const rawFormula = cell.v.trim().substring(1);
+            cell.f = rawFormula;
+            delete cell.v;
+            cell.t = 'n';
+            if (rawFormula.includes('/100') || rawFormula.includes('%') || cellRef.startsWith('E')) {
+              cell.z = '0.00%';
+            } else {
+              cell.z = '#,##0.00;[Red]-#,##0.00;"-"';
+            }
+          }
+
+          // Track string length for auto-width calculation
+          const str = cell.v !== undefined && cell.v !== null ? String(cell.v) : (cell.f ? '1,000,000,000.00' : '');
           if (str.length > colMaxLens[c]) {
-            colMaxLens[c] = Math.min(str.length + 3, 50);
+            colMaxLens[c] = Math.min(str.length + 4, 55);
           }
 
           // Format numbers and formulas
           if (cell.t === 'n' || cell.f) {
             const val = typeof cell.v === 'number' ? cell.v : 0;
-            // Percentage
+            // Percentage values
             if (cell.t === 'n' && val > 0 && val <= 1 && Math.abs(val) !== 1) {
               cell.z = '0.00%';
             } else if (cell.t === 'n' && Number.isInteger(val) && val >= 0 && val <= 500 && !cell.f) {
-              // Item count, staff, area count
+              // Item count, staff, area counts
               cell.z = '#,##0';
             } else {
-              // Financial amounts
+              // Financial amounts in RWF
               cell.z = '#,##0.00;[Red]-#,##0.00;"-"';
             }
           }
@@ -68,10 +82,10 @@ export class ExportService {
       }
 
       if (!ws['!cols'] || ws['!cols'].length === 0) {
-        ws['!cols'] = colMaxLens.map((w) => ({ wch: w }));
+        ws['!cols'] = colMaxLens.map((w) => ({ wch: Math.max(14, w) }));
       } else {
         ws['!cols'] = ws['!cols'].map((col, idx) => ({
-          wch: Math.max(col?.wch || 12, colMaxLens[idx] || 12),
+          wch: Math.max(col?.wch || 14, colMaxLens[idx] || 14),
         }));
       }
     });
@@ -297,7 +311,8 @@ export class ExportService {
     ];
 
     const incRowStart = incomeSheetData.length + 1;
-    state.incomeTransactions.forEach((inc) => {
+    state.incomeTransactions.forEach((inc, idx) => {
+      const currentRow = incRowStart + idx;
       incomeSheetData.push([
         inc.incomeNumber,
         inc.date,
@@ -308,7 +323,7 @@ export class ExportService {
         inc.project || 'General Operations',
         inc.amount,
         inc.tax,
-        inc.totalWithTax,
+        `=H${currentRow}+I${currentRow}`,
         inc.paymentMethod,
         inc.status,
         inc.approvedBy || 'Emmanuel Niyonzima',
@@ -378,7 +393,8 @@ export class ExportService {
     ];
 
     const expRowStart = expenseSheetData.length + 1;
-    state.expenseTransactions.forEach((exp) => {
+    state.expenseTransactions.forEach((exp, idx) => {
+      const currentRow = expRowStart + idx;
       expenseSheetData.push([
         exp.expenseNumber,
         exp.date,
@@ -390,7 +406,7 @@ export class ExportService {
         exp.isShared ? 'Shared Facility' : 'Direct Operation',
         exp.amount,
         exp.tax,
-        exp.totalWithTax,
+        `=I${currentRow}+J${currentRow}`,
         exp.paymentMethod,
         exp.status,
         exp.approvedBy || 'Emmanuel Niyonzima',
@@ -464,11 +480,12 @@ export class ExportService {
     ];
 
     const shRowStart = sharedSheetData.length + 1;
-    state.sharedExpenses.forEach((sh) => {
-      const getOrgAmount = (code: string) => {
-        const alloc = sh.allocations.find((a) => a.orgId.includes(code.toLowerCase()) || a.orgName.toLowerCase().includes(code.toLowerCase()));
-        return alloc ? alloc.amount : 0;
-      };
+    state.sharedExpenses.forEach((sh, idx) => {
+      const currentRow = shRowStart + idx;
+      const freqLower = String(sh.billingFrequency).toLowerCase();
+      const freqFormula = freqLower.includes('annual')
+        ? `=G${currentRow}/12` 
+        : (freqLower.includes('quarter') ? `=G${currentRow}/3` : `=G${currentRow}`);
 
       sharedSheetData.push([
         sh.expenseNumber,
@@ -478,11 +495,11 @@ export class ExportService {
         sh.description,
         sh.billingFrequency,
         sh.totalAmount,
-        sh.monthlyNormalizedAmount,
-        getOrgAmount('fablab'),
-        getOrgAmount('klab'),
-        getOrgAmount('fabcafe'),
-        getOrgAmount('250startups'),
+        freqFormula,
+        `=H${currentRow}*0.38`,
+        `=H${currentRow}*0.32`,
+        `=H${currentRow}*0.18`,
+        `=H${currentRow}*0.12`,
         sh.status,
         sh.submittedByOrgName || (sh.isShared ? 'Facility Pool' : 'Direct'),
         sh.submitterComments || '',
@@ -1410,11 +1427,12 @@ export class ExportService {
     ];
 
     const dataStartRow = regSheetData.length + 1; // 1-indexed for Excel formulas
-    state.sharedExpenses.forEach((exp) => {
-      const fablab = exp.allocations.find((a) => a.orgId === 'org-fablab')?.monthlyShare || 0;
-      const klab = exp.allocations.find((a) => a.orgId === 'org-klab')?.monthlyShare || 0;
-      const fabcafe = exp.allocations.find((a) => a.orgId === 'org-fabcafe')?.monthlyShare || 0;
-      const s250 = exp.allocations.find((a) => a.orgId === 'org-250startups')?.monthlyShare || 0;
+    state.sharedExpenses.forEach((exp, idx) => {
+      const currentRow = dataStartRow + idx;
+      const freqLower = String(exp.billingFrequency).toLowerCase();
+      const freqFormula = freqLower.includes('annual')
+        ? `=I${currentRow}/12` 
+        : (freqLower.includes('quarter') ? `=I${currentRow}/3` : `=I${currentRow}`);
 
       regSheetData.push([
         exp.expenseNumber,
@@ -1426,11 +1444,11 @@ export class ExportService {
         exp.submitterComments || 'Incurred for facility operations.',
         exp.billingFrequency,
         exp.totalAmount,
-        exp.monthlyNormalizedAmount,
-        fablab,
-        klab,
-        fabcafe,
-        s250,
+        freqFormula,
+        `=J${currentRow}*0.38`,
+        `=J${currentRow}*0.32`,
+        `=J${currentRow}*0.18`,
+        `=J${currentRow}*0.12`,
         exp.status,
         exp.approvedBy || (exp.status === 'Rejected' ? 'Emmanuel Niyonzima (Rejected)' : 'Awaiting Emmanuel Approval'),
         exp.adminRemarks || exp.rejectionReason || 'None',
