@@ -154,10 +154,20 @@ export const ExpensesView: React.FC = () => {
       e.status,
     ]);
 
-    ExportService.exportToExcel('Expenses Register', 'SEMS_Expenses_Register', headers, rows, [
-      { label: 'Total Filtered Expenses', value: FinancialCalculator.formatRWF(totalExpenseAmount) },
-      { label: 'Total Approved / Posted', value: FinancialCalculator.formatRWF(approvedExpenseAmount) },
-    ]);
+    ExportService.exportToExcel(
+      'Expenses Register',
+      'SEMS_Expenses_Register',
+      headers,
+      rows,
+      [
+        { label: 'TOTAL FILTERED EXPENSES', value: `${FinancialCalculator.formatRWF(totalExpenseAmount, false)} RWF` },
+        { label: 'TOTAL APPROVED / POSTED', value: `${FinancialCalculator.formatRWF(approvedExpenseAmount, false)} RWF` },
+      ],
+      {
+        sectionTitle: 'EXPENSE DETAIL',
+        generatedBy: 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)',
+      }
+    );
   };
 
   const categories = Array.from(new Set(expenses.map((e) => e.category)));

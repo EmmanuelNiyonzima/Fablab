@@ -154,9 +154,20 @@ export const IncomeView: React.FC<IncomeViewProps> = ({ onNavigate }) => {
       i.status,
     ]);
 
-    ExportService.exportToExcel('Revenue & Income Register', 'SEMS_Revenue_Register', headers, rows, [
-      { label: 'Total Filtered Revenue', value: FinancialCalculator.formatRWF(totalIncomeAmount) },
-    ]);
+    ExportService.exportToExcel(
+      'Revenue & Income Register',
+      'SEMS_Revenue_Register',
+      headers,
+      rows,
+      [
+        { label: 'TOTAL FILTERED REVENUE', value: `${FinancialCalculator.formatRWF(totalIncomeAmount, false)} RWF` },
+        { label: 'POSTED REVENUE ENTRIES', value: `${filteredIncome.filter(i => i.status === 'Posted' || i.status === 'Approved').length} Items` },
+      ],
+      {
+        sectionTitle: 'REVENUE & RECEIPT DETAIL',
+        generatedBy: 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)',
+      }
+    );
   };
 
   const handleDownloadReceiptPDF = (receipt: IncomeTransaction) => {

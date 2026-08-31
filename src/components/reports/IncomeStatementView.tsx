@@ -50,10 +50,13 @@ export const IncomeStatementView: React.FC = () => {
       headers,
       rows,
       [
-        { label: 'Total Revenue', value: FinancialCalculator.formatRWF(pnl.revenueTotal) },
-        { label: 'Gross Profit Margin', value: `${((pnl.grossProfit / (pnl.revenueTotal || 1)) * 100).toFixed(1)}%` },
-        { label: 'Net Operating Surplus', value: FinancialCalculator.formatRWF(pnl.netProfitBeforeTax) },
-      ]
+        { label: 'TOTAL TOPLINE REVENUE', value: `${FinancialCalculator.formatRWF(pnl.revenueTotal, false)} RWF` },
+        { label: 'NET OPERATING SURPLUS', value: `${FinancialCalculator.formatRWF(pnl.netProfitBeforeTax, false)} RWF` },
+      ],
+      {
+        sectionTitle: 'STATEMENT OF PROFIT & LOSS DETAIL',
+        generatedBy: 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)',
+      }
     );
   };
 

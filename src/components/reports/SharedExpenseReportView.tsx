@@ -76,9 +76,13 @@ export const SharedExpenseReportView: React.FC = () => {
       headers,
       rows,
       [
-        { label: 'Total Annual Shared Facility Budget', value: FinancialCalculator.formatRWF(sharedSummary.totalAnnualSharedBudget) },
-        { label: 'Monthly Normalized Cost Recovery', value: FinancialCalculator.formatRWF(sharedSummary.totalMonthlyNormalizedBudget) },
-      ]
+        { label: 'TOTAL ANNUAL FACILITY BUDGET', value: `${FinancialCalculator.formatRWF(sharedSummary.totalAnnualSharedBudget, false)} RWF` },
+        { label: 'MONTHLY NORMALIZED RECOVERY', value: `${FinancialCalculator.formatRWF(sharedSummary.totalMonthlyNormalizedBudget, false)} RWF` },
+      ],
+      {
+        sectionTitle: 'SHARED FACILITY COST APPORTIONMENT DETAIL',
+        generatedBy: 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)',
+      }
     );
   };
 

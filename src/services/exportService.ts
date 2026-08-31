@@ -711,51 +711,124 @@ export class ExportService {
   }
 
   /**
-   * Export Single Table to Excel Sheet (.xlsx) with Formatted Headers
+   * Export Single Table to Excel Sheet (.xlsx) with Corporate Executive Layout
+   * Matches the official institutional design:
+   * - Header & Facility Details
+   * - REPORT DETAILS Section Banner & Metadata Table
+   * - KEY FINANCIAL SUMMARY Section Banner & Large KPI Callout Blocks
+   * - DATA DETAIL Section Banner & Formatted Table with Live Row & Sum Formulas
+   * - Audit Footer Statement
    */
   static exportToExcel(
     title: string,
     filename: string,
     headers: string[],
     rows: (string | number)[][],
-    summaryStats?: { label: string; value: string | number }[]
+    summaryStats?: { label: string; value: string | number }[],
+    options?: {
+      orgName?: string;
+      orgCode?: string;
+      generatedBy?: string;
+      sectionTitle?: string;
+    }
   ) {
     const wb = XLSX.utils.book_new();
+    const dateFormatted = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const adminUser = options?.generatedBy || 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)';
 
+    // Build the visual structured matrix matching corporate standard:
     const matrix: (string | number)[][] = [
+      // Row 1: Header Brand
       ['SHARED EXPENSES MANAGEMENT SYSTEM'],
-      ['Telecom House Shared Facility (6th Floor) | Boulevard de l’Umuganda, Kacyiru, Kigali, Rwanda'],
-      ['Participating Organizations: Fablab Rwanda (38%) | Klab (32%) | Fab Cafe (18%) | 250Startups (12%)'],
-      ['Executive Administrator: Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)'],
-      [`Report Title: ${title}`],
-      [`Generated Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`],
-      [`Currency: RWF (Rwandan Francs)`],
+      // Row 2: Subtitle
+      [title],
+      // Row 3: Facility Location
+      ["Telecom House Shared Facility (6th Floor) — Boulevard de l'Umuganda, Kacyiru, Kigali, Rwanda"],
+      // Row 4: Separator
+      [],
+      // Row 5: Section 1 Banner
+      ['REPORT DETAILS'],
+      // Rows 6-10: Report Details Metadata
+      ['Participating Organizations', 'Fablab Rwanda (38%) · Klab (32%) · Fab Cafe (18%) · 250Startups (12%)'],
+      ['Executive Administrator', adminUser],
+      ['Report Title', title],
+      ['Generated', dateFormatted],
+      ['Currency', 'RWF — Rwandan Francs'],
+      // Row 11: Spacing
       [],
     ];
 
+    // Section 2: Key Financial Summary KPI Cards Banner & Metrics
     if (summaryStats && summaryStats.length > 0) {
-      matrix.push(['KEY FINANCIAL SUMMARY METRICS:']);
-      summaryStats.forEach((stat) => {
-        matrix.push([stat.label, stat.value]);
-      });
+      matrix.push(['KEY FINANCIAL SUMMARY']);
+      
+      if (summaryStats.length === 2) {
+        matrix.push([
+          summaryStats[0].label.toUpperCase(),
+          '',
+          '',
+          '',
+          '',
+          summaryStats[1].label.toUpperCase(),
+        ]);
+        matrix.push([
+          typeof summaryStats[0].value === 'number' ? summaryStats[0].value : String(summaryStats[0].value),
+          '',
+          '',
+          '',
+          '',
+          typeof summaryStats[1].value === 'number' ? summaryStats[1].value : String(summaryStats[1].value),
+        ]);
+      } else {
+        const labelsRow: (string | number)[] = [];
+        const valuesRow: (string | number)[] = [];
+        summaryStats.forEach((st) => {
+          labelsRow.push(st.label.toUpperCase(), '');
+          valuesRow.push(st.value, '');
+        });
+        matrix.push(labelsRow);
+        matrix.push(valuesRow);
+      }
       matrix.push([]);
     }
 
+    // Section 3: Data Detail Banner
+    const detailBanner = options?.sectionTitle || (title.toUpperCase().includes('EXPENSE') ? 'EXPENSE DETAIL' : (title.toUpperCase().includes('INCOME') || title.toUpperCase().includes('REVENUE') ? 'INCOME & REVENUE DETAIL' : 'FINANCIAL DETAIL'));
+    matrix.push([detailBanner]);
+
+    // Table Headers
     const headerRowIdx = matrix.length;
     matrix.push(headers);
 
-    const dataStartRow = matrix.length + 1;
-    rows.forEach((r) => matrix.push(r));
+    const dataStartRow = matrix.length + 1; // 1-indexed for Excel formulas
+    rows.forEach((r, rIdx) => {
+      const currentRow = dataStartRow + rIdx;
+      // If row has formula patterns, transform them if needed or push directly
+      const formattedRow = r.map((cell, colIdx) => {
+        // If it's the Total with Tax column in standard expense register (Subtotal at colIdx-2, Tax at colIdx-1)
+        if (
+          headers[colIdx]?.toLowerCase().includes('total with tax') &&
+          headers[colIdx - 2]?.toLowerCase().includes('subtotal') &&
+          headers[colIdx - 1]?.toLowerCase().includes('tax')
+        ) {
+          const subCol = toCellRef(colIdx - 2, 0).replace(/[0-9]/g, '');
+          const taxCol = toCellRef(colIdx - 1, 0).replace(/[0-9]/g, '');
+          return `=${subCol}${currentRow}+${taxCol}${currentRow}`;
+        }
+        return cell;
+      });
+      matrix.push(formattedRow);
+    });
     const dataEndRow = matrix.length;
 
     // Check if there are numeric columns to add an auto-sum row
     const isNumberColumn = (colIdx: number) => {
       if (rows.length === 0) return false;
-      return rows.some((r) => typeof r[colIdx] === 'number');
+      return rows.some((r) => typeof r[colIdx] === 'number' || (typeof r[colIdx] === 'string' && (r[colIdx] as string).startsWith('=')));
     };
 
     const hasNumericCols = headers.some((_, i) => isNumberColumn(i));
-    if (hasNumericCols && rows.length > 1) {
+    if (hasNumericCols && rows.length > 0) {
       const sumRow: (string | number)[] = ['TOTAL SUMMARY'];
       for (let c = 1; c < headers.length; c++) {
         if (isNumberColumn(c)) {
@@ -768,16 +841,40 @@ export class ExportService {
       matrix.push(sumRow);
     }
 
+    // Spacing & Footer
+    matrix.push([]);
+    matrix.push(['Prepared by the SEMS Executive Administrator on behalf of Fablab Rwanda, Klab, Fab Cafe and 250Startups.']);
+
     const ws = XLSX.utils.aoa_to_sheet(matrix);
+
+    // Row heights for visual hierarchy
+    const rowHeights: { hpt: number }[] = [];
+    rowHeights[0] = { hpt: 24 }; // Brand Title
+    rowHeights[1] = { hpt: 18 }; // Report Title
+    rowHeights[2] = { hpt: 14 }; // Subtext
+    rowHeights[4] = { hpt: 20 }; // Report Details Banner
+    if (summaryStats && summaryStats.length > 0) {
+      rowHeights[11] = { hpt: 20 }; // Summary banner
+      rowHeights[12] = { hpt: 15 }; // Card label
+      rowHeights[13] = { hpt: 24 }; // Card big number
+    }
+    rowHeights[headerRowIdx] = { hpt: 22 }; // Table Header
+    ws['!rows'] = rowHeights;
 
     const colWidths = headers.map((h, i) => {
       let maxLen = h.length;
       rows.forEach((r) => {
-        const val = r[i] !== undefined ? String(r[i]) : '';
+        const val = r[i] !== undefined && r[i] !== null ? String(r[i]) : '';
         if (val.length > maxLen) maxLen = val.length;
       });
-      return { wch: Math.min(50, Math.max(16, maxLen + 3)) };
+      return { wch: Math.min(55, Math.max(16, maxLen + 4)) };
     });
+
+    // Ensure first columns have generous width for metadata and descriptions
+    if (colWidths[0]) colWidths[0].wch = Math.max(colWidths[0].wch, 24);
+    if (colWidths[1]) colWidths[1].wch = Math.max(colWidths[1].wch, 15);
+    if (colWidths[2]) colWidths[2].wch = Math.max(colWidths[2].wch, 30);
+    if (colWidths[3]) colWidths[3].wch = Math.max(colWidths[3].wch, 36);
 
     ws['!cols'] = colWidths;
     ws['!views'] = [{ state: 'frozen', ySplit: headerRowIdx + 1 }];

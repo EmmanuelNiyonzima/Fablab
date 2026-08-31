@@ -44,9 +44,13 @@ export const CashFlowView: React.FC = () => {
       headers,
       rows,
       [
-        { label: 'Net Cash from Operating Activities', value: FinancialCalculator.formatRWF(cf.netOperatingCash) },
-        { label: 'Closing Cash Position', value: FinancialCalculator.formatRWF(cf.endingCash) },
-      ]
+        { label: 'NET CASH FROM OPERATIONS', value: `${FinancialCalculator.formatRWF(cf.netOperatingCash, false)} RWF` },
+        { label: 'CLOSING CASH POSITION', value: `${FinancialCalculator.formatRWF(cf.endingCash, false)} RWF` },
+      ],
+      {
+        sectionTitle: 'CASH FLOW ACTIVITIES DETAIL',
+        generatedBy: 'Emmanuel Niyonzima (niyonzimaemmanuel85@gmail.com)',
+      }
     );
   };
 
